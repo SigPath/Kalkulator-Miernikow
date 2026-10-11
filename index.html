@@ -35,8 +35,8 @@ td.out{font-variant-numeric:tabular-nums;text-align:right;font-weight:600;backgr
 th:last-child{text-align:right}
 .avg{display:flex;justify-content:space-between;margin-top:10px;padding:12px;border-radius:10px;background:var(--out);font-weight:700}
 button{margin-top:10px;font:inherit;font-size:14px;color:var(--acc);background:none;border:0;padding:6px 0}
-.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin-bottom:16px;background:var(--line);border-radius:12px}
-.tabs button{margin:0;padding:10px 0;font-weight:600;font-size:15px;color:var(--mut);border-radius:9px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;margin-bottom:16px;background:var(--line);border-radius:12px}
+.tabs button{margin:0;padding:10px 0;font-weight:600;font-size:12.5px;color:var(--mut);border-radius:9px}
 .tabs button[aria-selected=true]{background:var(--card);color:var(--acc);box-shadow:0 1px 3px rgba(0,0,0,.15)}
 .card[hidden]{display:none}
 .hint{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--out);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:14px}
@@ -45,6 +45,15 @@ button{margin-top:10px;font:inherit;font-size:14px;color:var(--acc);background:n
 .hint button{margin:0;color:var(--mut);font-size:16px}
 .sub{text-align:right;color:var(--mut);font-size:14px;margin-top:6px;font-variant-numeric:tabular-nums}
 td.rel{font-size:13px;font-weight:500;padding:9px 6px;white-space:nowrap}
+.step{margin-top:14px}
+.step h3{margin:0 0 6px;font-size:13px;color:var(--mut);font-weight:600}
+.ln{font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;padding:3px 8px;border-radius:6px;overflow-wrap:anywhere}
+.ln:nth-child(even){background:var(--bg)}
+.res{margin-top:8px;padding:12px;border-radius:10px;background:var(--out);font-weight:700;font:700 16px ui-monospace,Menlo,monospace;overflow-wrap:anywhere}
+.err{color:#d92d20;font-size:14px;margin:8px 0}
+.all{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font:14px ui-monospace,Menlo,monospace}
+.all b{color:var(--mut);font-weight:500}
+.sw{display:flex;justify-content:flex-end}
 footer{color:var(--mut);font-size:12px;text-align:center}
 </style>
 </head>
@@ -55,7 +64,7 @@ footer{color:var(--mut);font-size:12px;text-align:center}
 <div class="hint" id="inst" hidden><span>Zainstaluj aplikację na tym urządzeniu.</span><button type="button" id="instgo" class="go">Zainstaluj</button></div>
 <div class="tabs" id="tabs" role="tablist"></div>
 <div id="app"></div>
-<footer>Wartość = (α ÷ α maks.) × zakres · Δ = klasa × zakres ÷ 100 · δ = Δ ÷ wartość</footer>
+<footer>Mierniki: wartość = (α ÷ α maks.) × zakres · Δ = klasa × zakres ÷ 100 · δ = Δ ÷ wartość</footer>
 </main>
 <script>
 const METERS=[
@@ -72,12 +81,13 @@ const num=s=>{const n=parseFloat(String(s).replace(",","."));return isFinite(n)?
 const fmt=n=>n===null?"–":(Math.round(n*1e6)/1e6).toString().replace(".",",");
 const app=document.getElementById("app"),tabs=document.getElementById("tabs");
 const cards={};
+const ALL=[...METERS,{id:"n",title:"SYSTEMY"}];
 function show(id){
  state.tab=id;
- METERS.forEach(m=>{cards[m.id].hidden=m.id!==id;tabs.querySelector(`[data-t=${m.id}]`).setAttribute("aria-selected",m.id===id)});
+ ALL.forEach(m=>{cards[m.id].hidden=m.id!==id;tabs.querySelector(`[data-t=${m.id}]`).setAttribute("aria-selected",m.id===id)});
  save();
 }
-METERS.forEach(m=>{const b=document.createElement("button");b.type="button";b.dataset.t=m.id;b.setAttribute("role","tab");b.textContent=m.title;b.onclick=()=>show(m.id);tabs.appendChild(b)});
+ALL.forEach(m=>{const b=document.createElement("button");b.type="button";b.dataset.t=m.id;b.setAttribute("role","tab");b.textContent=m.title;b.onclick=()=>show(m.id);tabs.appendChild(b)});
 METERS.forEach(m=>{
  const s=state[m.id], u=()=>s.unit;
  const card=document.createElement("section");card.className="card";
@@ -124,7 +134,82 @@ METERS.forEach(m=>{
  card.querySelector("button").onclick=()=>{s.alfa=Array(N).fill("");ins.forEach(i=>i.value="");calc()};
  calc();
 });
-show(METERS.some(m=>m.id===state.tab)?state.tab:METERS[0].id);
+
+(function(){
+ const BN={2:"dwójkowy (binarny)",8:"ósemkowy",10:"dziesiętny",16:"szesnastkowy"};
+ const DIG="0123456789ABCDEF";
+ const sec=document.createElement("section");sec.className="card";
+ const ns=state.n=state.n||{};ns.val=ns.val||"";ns.from=ns.from||10;ns.to=ns.to||2;
+ const opt=(sel)=>Object.keys(BN).map(b=>`<option value=${b}${+b===+sel?" selected":""}>${BN[b]}</option>`).join("");
+ sec.innerHTML=`<h2>KALKULATOR SYSTEMÓW</h2>
+ <div class="row"><div style="grid-column:1/-1"><label>Liczba</label><input id=nv autocapitalize=characters autocomplete=off autocorrect=off spellcheck=false value="${ns.val}" placeholder="np. 255"></div>
+ <div><label>Z systemu</label><select id=nf>${opt(ns.from)}</select></div>
+ <div><label>Na system</label><select id=nt>${opt(ns.to)}</select></div></div>
+ <div class=sw><button type=button id=nsw>⇄ Zamień systemy</button></div>
+ <div id=nout></div>`;
+ app.appendChild(sec);cards.n=sec;
+ const esc=t=>String(t).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+ const D=c=>DIG.indexOf(c);
+ const sup=(b,p)=>`${b}<sup>${p}</sup>`;
+ const lines=a=>a.map(l=>`<div class=ln>${l}</div>`).join("");
+ const step=(t,a,r)=>`<div class=step><h3>${t}</h3>${lines(a)}${r?`<div class=res>${r}</div>`:""}</div>`;
+ function render(){
+  const out=document.getElementById("nout"),f=+ns.from,t=+ns.to;
+  const raw=ns.val.trim().toUpperCase().replace(/\s+/g,"");
+  save();
+  if(!raw){out.innerHTML="";return}
+  for(const ch of raw){if(D(ch)<0||D(ch)>=f){out.innerHTML=`<div class=err>Znak „${esc(ch)}” nie należy do systemu: ${BN[f]} (cyfry: ${DIG.slice(0,f)}).</div>`;return}}
+  const n=BigInt("0x0")+raw.split("").reduce((a,c)=>a*BigInt(f)+BigInt(D(c)),0n);
+  const T=x=>x.toString(t).toUpperCase();
+  let h="";
+  if(f===t){out.innerHTML=step("Ten sam system",["Wybrano ten sam system źródłowy i docelowy, więc liczba się nie zmienia."],esc(raw)+`<sub>${f}</sub>`);return}
+  // skrót dla potęg dwójki
+  const g={8:3,16:4};
+  if(f===2&&g[t]){
+   const k=g[t],pad=(k-raw.length%k)%k,bits="0".repeat(pad)+raw,gr=bits.match(new RegExp(`.{${k}}`,"g"));
+   h+=step(`Metoda skrótowa: grupujemy po ${k} bity od prawej`,[
+    pad?`Dopełniamy zerami z lewej do pełnych grup: ${bits}`:`Liczba ma pełne grupy: ${bits}`,
+    `Grupy: ${gr.join(" ")}`,
+    ...gr.map(x=>`${x}<sub>2</sub> = ${parseInt(x,2)}<sub>10</sub> = ${parseInt(x,2).toString(16).toUpperCase()}<sub>${t}</sub>`)
+   ],`${gr.map(x=>parseInt(x,2).toString(16).toUpperCase()).join("").replace(/^0+(?=.)/,"")}<sub>${t}</sub>`);
+  }else if(t===2&&g[f]){
+   const k=g[f];
+   h+=step(`Metoda skrótowa: każda cyfra to ${k} bity`,raw.split("").map(c=>`${c}<sub>${f}</sub> = ${D(c)}<sub>10</sub> = ${D(c).toString(2).padStart(k,"0")}<sub>2</sub>`),
+    `${raw.split("").map(c=>D(c).toString(2).padStart(k,"0")).join("").replace(/^0+(?=.)/,"")}<sub>2</sub>`);
+  }
+  const gen=h?"Metoda ogólna: ":"";
+  let st=1;
+  if(f!==10){
+   const L=raw.length,ls=[];
+   raw.split("").forEach((c,i)=>{
+    const p=L-1-i,w=BigInt(f)**BigInt(p),d=BigInt(D(c));
+    ls.push(`${c}${D(c)>9?` (=${D(c)})`:""} × ${sup(f,p)} = ${D(c)} × ${w} = ${d*w}`);
+   });
+   ls.push(`Suma: ${raw.split("").map((c,i)=>BigInt(D(c))*BigInt(f)**BigInt(L-1-i)).join(" + ")} = ${n}`);
+   h+=step(`${gen}Krok ${st++}: zamiana z systemu ${f} na dziesiętny (wartość × waga pozycji)`,ls,`${n}<sub>10</sub>`);
+  }
+  if(t!==10){
+   const ls=[];let q=n;
+   if(q===0n)ls.push("0 → 0");
+   while(q>0n){const r=q%BigInt(t),nq=q/BigInt(t);ls.push(`${q} : ${t} = ${nq}, reszta ${r}${r>9n?` (= ${DIG[Number(r)]})`:""}`);q=nq}
+   ls.push("Reszty czytamy od dołu do góry.");
+   h+=step(`${gen}Krok ${st++}: zamiana z dziesiętnego na system ${t} (dzielenie przez ${t})`,ls,`${T(n)}<sub>${t}</sub>`);
+  }
+  h+=`<div class=step><h3>Wynik we wszystkich systemach</h3><div class=all>${[2,8,10,16].map(b=>`<b>${b}</b><span>${n.toString(b).toUpperCase()}</span>`).join("")}</div></div>`;
+  out.innerHTML=h;
+ }
+ document.getElementById("nv").oninput=e=>{ns.val=e.target.value;render()};
+ document.getElementById("nf").onchange=e=>{ns.from=+e.target.value;render()};
+ document.getElementById("nt").onchange=e=>{ns.to=+e.target.value;render()};
+ document.getElementById("nsw").onclick=()=>{
+  const raw=ns.val.trim().toUpperCase().replace(/\s+/g,"");let ok=!!raw;
+  for(const c of raw)if(D(c)<0||D(c)>=+ns.from)ok=false;
+  if(ok){const n=raw.split("").reduce((a,c)=>a*BigInt(ns.from)+BigInt(D(c)),0n);ns.val=n.toString(+ns.to).toUpperCase()}
+  [ns.from,ns.to]=[ns.to,ns.from];
+  document.getElementById("nv").value=ns.val;document.getElementById("nf").value=ns.from;document.getElementById("nt").value=ns.to;render();
+ };
+ render();
+})();
 (function(){
  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
  const standalone=navigator.standalone||matchMedia("(display-mode: standalone)").matches;
@@ -139,6 +224,7 @@ show(METERS.some(m=>m.id===state.tab)?state.tab:METERS[0].id);
  document.getElementById("instgo").onclick=async()=>{if(!ev)return;ev.prompt();await ev.userChoice;ev=null;box.hidden=true};
  addEventListener("appinstalled",()=>{box.hidden=true});
 })();
+show(ALL.some(m=>m.id===state.tab)?state.tab:ALL[0].id);
 if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 </script>
 </body>
