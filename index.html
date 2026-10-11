@@ -39,12 +39,16 @@ button{margin-top:10px;font:inherit;font-size:14px;color:var(--acc);background:n
 .tabs button{margin:0;padding:10px 0;font-weight:600;font-size:15px;color:var(--mut);border-radius:9px}
 .tabs button[aria-selected=true]{background:var(--card);color:var(--acc);box-shadow:0 1px 3px rgba(0,0,0,.15)}
 .card[hidden]{display:none}
+.hint{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--out);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:14px}
+.hint[hidden]{display:none}
+.hint button{margin:0;color:var(--mut);font-size:16px}
 footer{color:var(--mut);font-size:12px;text-align:center}
 </style>
 </head>
 <body>
 <main>
 <h1>Kalkulator Mierników</h1>
+<div class="hint" id="hint" hidden><span>Zainstaluj: dotknij <b>Udostępnij</b> <svg width="14" height="18" viewBox="0 0 14 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M7 1v11M3.5 4.5 7 1l3.5 3.5M2 8H1v9h12V8h-1"/></svg> a potem <b>Do ekranu początkowego</b>.</span><button type="button" id="hintx" aria-label="Zamknij">✕</button></div>
 <div class="tabs" id="tabs" role="tablist"></div>
 <div id="app"></div>
 <footer>Wartość = (działki ÷ działki maks.) × zakres</footer>
@@ -109,6 +113,14 @@ METERS.forEach(m=>{
  calc();
 });
 show(METERS.some(m=>m.id===state.tab)?state.tab:METERS[0].id);
+(function(){
+ const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+ const standalone=navigator.standalone||matchMedia("(display-mode: standalone)").matches;
+ let dismissed=false;try{dismissed=localStorage.getItem("hint-x")==="1"}catch(e){}
+ const h=document.getElementById("hint");
+ if(ios&&!standalone&&!dismissed)h.hidden=false;
+ document.getElementById("hintx").onclick=()=>{h.hidden=true;try{localStorage.setItem("hint-x","1")}catch(e){}};
+})();
 if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 </script>
 </body>
