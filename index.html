@@ -35,12 +35,17 @@ td.out{font-variant-numeric:tabular-nums;text-align:right;font-weight:600;backgr
 th:last-child{text-align:right}
 .avg{display:flex;justify-content:space-between;margin-top:10px;padding:12px;border-radius:10px;background:var(--out);font-weight:700}
 button{margin-top:10px;font:inherit;font-size:14px;color:var(--acc);background:none;border:0;padding:6px 0}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin-bottom:16px;background:var(--line);border-radius:12px}
+.tabs button{margin:0;padding:10px 0;font-weight:600;font-size:15px;color:var(--mut);border-radius:9px}
+.tabs button[aria-selected=true]{background:var(--card);color:var(--acc);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.card[hidden]{display:none}
 footer{color:var(--mut);font-size:12px;text-align:center}
 </style>
 </head>
 <body>
 <main>
 <h1>Kalkulator Mierników</h1>
+<div class="tabs" id="tabs" role="tablist"></div>
 <div id="app"></div>
 <footer>Wartość = (działki ÷ działki maks.) × zakres</footer>
 </main>
@@ -57,7 +62,14 @@ METERS.forEach(m=>{state[m.id]=state[m.id]||{range:m.range,max:m.max,unit:m.unit
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}};
 const num=s=>{const n=parseFloat(String(s).replace(",","."));return isFinite(n)?n:null};
 const fmt=n=>n===null?"–":(Math.round(n*1e6)/1e6).toString().replace(".",",");
-const app=document.getElementById("app");
+const app=document.getElementById("app"),tabs=document.getElementById("tabs");
+const cards={};
+function show(id){
+ state.tab=id;
+ METERS.forEach(m=>{cards[m.id].hidden=m.id!==id;tabs.querySelector(`[data-t=${m.id}]`).setAttribute("aria-selected",m.id===id)});
+ save();
+}
+METERS.forEach(m=>{const b=document.createElement("button");b.type="button";b.dataset.t=m.id;b.setAttribute("role","tab");b.textContent=m.title;b.onclick=()=>show(m.id);tabs.appendChild(b)});
 METERS.forEach(m=>{
  const s=state[m.id], u=()=>s.unit;
  const card=document.createElement("section");card.className="card";
@@ -73,7 +85,7 @@ METERS.forEach(m=>{
  </tbody></table>
  <div class=avg><span>średnia:</span><span data-avg></span></div>
  <button type=button>Wyczyść pomiary</button>`;
- app.appendChild(card);
+ app.appendChild(card);cards[m.id]=card;
  const outs=[...card.querySelectorAll("td.out")], ins=[...card.querySelectorAll("[data-i]")];
  function calc(){
   const r=num(s.range), mx=num(s.max), un=s.unit, cu=m.units[0]==="A"?"A":"V";
@@ -96,6 +108,7 @@ METERS.forEach(m=>{
  card.querySelector("button").onclick=()=>{s.alfa=Array(N).fill("");ins.forEach(i=>i.value="");calc()};
  calc();
 });
+show(METERS.some(m=>m.id===state.tab)?state.tab:METERS[0].id);
 if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 </script>
 </body>
