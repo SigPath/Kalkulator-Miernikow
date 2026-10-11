@@ -41,6 +41,7 @@ button{margin-top:10px;font:inherit;font-size:14px;color:var(--acc);background:n
 .card[hidden]{display:none}
 .hint{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--out);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:14px}
 .hint[hidden]{display:none}
+.hint .go{background:var(--acc);color:#fff;border-radius:9px;padding:7px 14px;font-weight:600;margin:0}
 .hint button{margin:0;color:var(--mut);font-size:16px}
 footer{color:var(--mut);font-size:12px;text-align:center}
 </style>
@@ -49,6 +50,7 @@ footer{color:var(--mut);font-size:12px;text-align:center}
 <main>
 <h1>Kalkulator Mierników</h1>
 <div class="hint" id="hint" hidden><span>Zainstaluj: dotknij <b>Udostępnij</b> <svg width="14" height="18" viewBox="0 0 14 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M7 1v11M3.5 4.5 7 1l3.5 3.5M2 8H1v9h12V8h-1"/></svg> a potem <b>Do ekranu początkowego</b>.</span><button type="button" id="hintx" aria-label="Zamknij">✕</button></div>
+<div class="hint" id="inst" hidden><span>Zainstaluj aplikację na tym urządzeniu.</span><button type="button" id="instgo" class="go">Zainstaluj</button></div>
 <div class="tabs" id="tabs" role="tablist"></div>
 <div id="app"></div>
 <footer>Wartość = (działki ÷ działki maks.) × zakres</footer>
@@ -120,6 +122,12 @@ show(METERS.some(m=>m.id===state.tab)?state.tab:METERS[0].id);
  const h=document.getElementById("hint");
  if(ios&&!standalone&&!dismissed)h.hidden=false;
  document.getElementById("hintx").onclick=()=>{h.hidden=true;try{localStorage.setItem("hint-x","1")}catch(e){}};
+})();
+(function(){
+ let ev=null;const box=document.getElementById("inst");
+ addEventListener("beforeinstallprompt",e=>{e.preventDefault();ev=e;box.hidden=false});
+ document.getElementById("instgo").onclick=async()=>{if(!ev)return;ev.prompt();await ev.userChoice;ev=null;box.hidden=true};
+ addEventListener("appinstalled",()=>{box.hidden=true});
 })();
 if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 </script>
