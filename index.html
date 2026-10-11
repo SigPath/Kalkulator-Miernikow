@@ -43,6 +43,8 @@ button{margin-top:10px;font:inherit;font-size:14px;color:var(--acc);background:n
 .hint[hidden]{display:none}
 .hint .go{background:var(--acc);color:#fff;border-radius:9px;padding:7px 14px;font-weight:600;margin:0}
 .hint button{margin:0;color:var(--mut);font-size:16px}
+.sub{text-align:right;color:var(--mut);font-size:14px;margin-top:6px;font-variant-numeric:tabular-nums}
+td.rel{font-size:13px;font-weight:500;padding:9px 6px;white-space:nowrap}
 footer{color:var(--mut);font-size:12px;text-align:center}
 </style>
 </head>
@@ -53,18 +55,18 @@ footer{color:var(--mut);font-size:12px;text-align:center}
 <div class="hint" id="inst" hidden><span>Zainstaluj aplikację na tym urządzeniu.</span><button type="button" id="instgo" class="go">Zainstaluj</button></div>
 <div class="tabs" id="tabs" role="tablist"></div>
 <div id="app"></div>
-<footer>Wartość = (działki ÷ działki maks.) × zakres</footer>
+<footer>Wartość = (α ÷ α maks.) × zakres · Δ = klasa × zakres ÷ 100 · δ = Δ ÷ wartość</footer>
 </main>
 <script>
 const METERS=[
- {id:"a",title:"AMPEROMIERZ",label:"prąd",units:["A","mA"],range:5,max:30},
- {id:"v",title:"VOLTOMIERZ",label:"napięcie",units:["V","mV"],range:3,max:50}
+ {id:"a",title:"AMPEROMIERZ",label:"prąd",units:["A","mA"],range:5,max:30,cls:0.5},
+ {id:"v",title:"VOLTOMIERZ",label:"napięcie",units:["V","mV"],range:3,max:50,cls:0.5}
 ];
 const N=11, KEY="kalkulator-miernikow-v1";
 let state;
 try{state=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!state)state={};
-METERS.forEach(m=>{state[m.id]=state[m.id]||{range:m.range,max:m.max,unit:m.units[0],alfa:Array(N).fill("")}});
+METERS.forEach(m=>{state[m.id]=state[m.id]||{range:m.range,max:m.max,unit:m.units[0],alfa:Array(N).fill("")};if(state[m.id].cls===undefined)state[m.id].cls=m.cls});
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}};
 const num=s=>{const n=parseFloat(String(s).replace(",","."));return isFinite(n)?n:null};
 const fmt=n=>n===null?"–":(Math.round(n*1e6)/1e6).toString().replace(".",",");
@@ -84,25 +86,33 @@ METERS.forEach(m=>{
   <div><label>Max zakres przyrządu</label><input data-k=range inputmode=decimal value="${s.range}"></div>
   <div><label>Jednostka</label><select data-k=unit>${m.units.map(x=>`<option${x==s.unit?" selected":""}>${x}</option>`).join("")}</select></div>
   <div><label>Działki maks. (skala)</label><input data-k=max inputmode=decimal value="${s.max}"></div>
+  <div><label>Klasa dokładności</label><input data-k=cls inputmode=decimal value="${s.cls}"></div>
   <div><label>Stała C</label><input data-c readonly></div>
+  <div><label>Błąd bezwzgl. Δ (±)</label><input data-d readonly></div>
  </div>
- <table><thead><tr><th>Lp</th><th>α [dz]</th><th>${m.label}</th></tr></thead><tbody>
- ${s.alfa.map((a,i)=>`<tr><td>${i+1}</td><td><input data-i=${i} inputmode=decimal placeholder="dz" value="${a}"></td><td class=out></td></tr>`).join("")}
+ <table><thead><tr><th>Lp</th><th>α [dz]</th><th>${m.label}</th><th>δ</th></tr></thead><tbody>
+ ${s.alfa.map((a,i)=>`<tr><td>${i+1}</td><td><input data-i=${i} inputmode=decimal placeholder="dz" value="${a}"></td><td class=out></td><td class="out rel"></td></tr>`).join("")}
  </tbody></table>
  <div class=avg><span>średnia:</span><span data-avg></span></div>
+ <div class=sub data-avgrel></div>
  <button type=button>Wyczyść pomiary</button>`;
  app.appendChild(card);cards[m.id]=card;
- const outs=[...card.querySelectorAll("td.out")], ins=[...card.querySelectorAll("[data-i]")];
+ const outs=[...card.querySelectorAll("td.out:not(.rel)")], rels=[...card.querySelectorAll("td.rel")], ins=[...card.querySelectorAll("[data-i]")];
  function calc(){
   const r=num(s.range), mx=num(s.max), un=s.unit, cu=m.units[0]==="A"?"A":"V";
   card.querySelector("[data-c]").value=(r!==null&&mx)?`${fmt(r/mx)} ${un}/dz`:"–";
+  const cl=num(s.cls), d=(cl!==null&&r!==null)?cl*r/100:null;
+  card.querySelector("[data-d]").value=d===null?"–":`${fmt(d)} ${un}`;
   const vals=[];
   s.alfa.forEach((a,i)=>{
    const al=num(a);let v=null;
    if(al!==null&&r!==null&&mx){v=al*r/mx;vals.push(v)}
    outs[i].textContent=v===null?"":`${fmt(v)} ${un}`;
+   rels[i].textContent=(v!==null&&d!==null&&v!==0)?`${fmt(Math.round(d/Math.abs(v)*1e4)/100)}%`:"";
   });
-  card.querySelector("[data-avg]").textContent=vals.length?`${fmt(vals.reduce((x,y)=>x+y,0)/vals.length)} ${un}`:"–";
+  const avg=vals.length?vals.reduce((x,y)=>x+y,0)/vals.length:null;
+  card.querySelector("[data-avg]").textContent=avg===null?"–":`${fmt(avg)}${d===null?"":" ± "+fmt(d)} ${un}`;
+  card.querySelector("[data-avgrel]").textContent=(avg!==null&&d!==null&&avg!==0)?`δ = ${fmt(Math.round(d/Math.abs(avg)*1e4)/100)}%`:"";
   save();
  }
  card.addEventListener("input",e=>{
