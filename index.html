@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Kalkulator Mierników</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b5fff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mierniki">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--bg:#f2f4f8;--card:#fff;--fg:#14181f;--mut:#667085;--line:#e3e7ee;--acc:#0b5fff;--out:#eef3ff}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1116;--card:#171b22;--fg:#e8ebf0;--mut:#98a2b3;--line:#262c36;--acc:#5b94ff;--out:#1d2535}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 -apple-system,system-ui,sans-serif;
+padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+main{max-width:520px;margin:0 auto}
+h1{font-size:22px;margin:4px 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+h2{margin:0 0 12px;font-size:17px;letter-spacing:.04em}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+label{display:block;font-size:12px;color:var(--mut);margin-bottom:4px}
+input,select{width:100%;font:inherit;font-size:17px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--fg)}
+input:focus,select:focus{outline:2px solid var(--acc);border-color:transparent}
+.c{font-size:14px;color:var(--mut);margin:0 0 10px}
+table{width:100%;border-collapse:collapse}
+th{font-size:12px;color:var(--mut);font-weight:500;text-align:left;padding:4px 6px 6px}
+td{padding:4px 6px}
+td:first-child{width:28px;color:var(--mut)}
+td.out{font-variant-numeric:tabular-nums;text-align:right;font-weight:600;background:var(--out);border-radius:8px;padding:9px 10px}
+th:last-child{text-align:right}
+.avg{display:flex;justify-content:space-between;margin-top:10px;padding:12px;border-radius:10px;background:var(--out);font-weight:700}
+button{margin-top:10px;font:inherit;font-size:14px;color:var(--acc);background:none;border:0;padding:6px 0}
+footer{color:var(--mut);font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+<main>
+<h1>Kalkulator Mierników</h1>
+<div id="app"></div>
+<footer>Wartość = (działki ÷ działki maks.) × zakres</footer>
+</main>
+<script>
+const METERS=[
+ {id:"a",title:"AMPEROMIERZ",label:"prąd",units:["A","mA"],range:5,max:30},
+ {id:"v",title:"VOLTOMIERZ",label:"napięcie",units:["V","mV"],range:3,max:50}
+];
+const N=11, KEY="kalkulator-miernikow-v1";
+let state;
+try{state=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!state)state={};
+METERS.forEach(m=>{state[m.id]=state[m.id]||{range:m.range,max:m.max,unit:m.units[0],alfa:Array(N).fill("")}});
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}};
+const num=s=>{const n=parseFloat(String(s).replace(",","."));return isFinite(n)?n:null};
+const fmt=n=>n===null?"–":(Math.round(n*1e6)/1e6).toString().replace(".",",");
+const app=document.getElementById("app");
+METERS.forEach(m=>{
+ const s=state[m.id], u=()=>s.unit;
+ const card=document.createElement("section");card.className="card";
+ card.innerHTML=`<h2>${m.title}</h2>
+ <div class="row">
+  <div><label>Max zakres przyrządu</label><input data-k=range inputmode=decimal value="${s.range}"></div>
+  <div><label>Jednostka</label><select data-k=unit>${m.units.map(x=>`<option${x==s.unit?" selected":""}>${x}</option>`).join("")}</select></div>
+  <div><label>Działki maks. (skala)</label><input data-k=max inputmode=decimal value="${s.max}"></div>
+  <div><label>Stała C</label><input data-c readonly></div>
+ </div>
+ <table><thead><tr><th>Lp</th><th>α [dz]</th><th>${m.label}</th></tr></thead><tbody>
+ ${s.alfa.map((a,i)=>`<tr><td>${i+1}</td><td><input data-i=${i} inputmode=decimal placeholder="dz" value="${a}"></td><td class=out></td></tr>`).join("")}
+ </tbody></table>
+ <div class=avg><span>średnia:</span><span data-avg></span></div>
+ <button type=button>Wyczyść pomiary</button>`;
+ app.appendChild(card);
+ const outs=[...card.querySelectorAll("td.out")], ins=[...card.querySelectorAll("[data-i]")];
+ function calc(){
+  const r=num(s.range), mx=num(s.max), un=s.unit, cu=m.units[0]==="A"?"A":"V";
+  card.querySelector("[data-c]").value=(r!==null&&mx)?`${fmt(r/mx)} ${un}/dz`:"–";
+  const vals=[];
+  s.alfa.forEach((a,i)=>{
+   const al=num(a);let v=null;
+   if(al!==null&&r!==null&&mx){v=al*r/mx;vals.push(v)}
+   outs[i].textContent=v===null?"":`${fmt(v)} ${un}`;
+  });
+  card.querySelector("[data-avg]").textContent=vals.length?`${fmt(vals.reduce((x,y)=>x+y,0)/vals.length)} ${un}`:"–";
+  save();
+ }
+ card.addEventListener("input",e=>{
+  const t=e.target;
+  if(t.dataset.i!==undefined)s.alfa[+t.dataset.i]=t.value;
+  else if(t.dataset.k)s[t.dataset.k]=t.value;
+  calc();
+ });
+ card.querySelector("button").onclick=()=>{s.alfa=Array(N).fill("");ins.forEach(i=>i.value="");calc()};
+ calc();
+});
+if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script>
+</body>
+</html>
