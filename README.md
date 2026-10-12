@@ -2,8 +2,9 @@
 
 Prosta aplikacja webowa (PWA) do obliczeń na lekcjach elektrotechniki i miernictwa:
 wskazania **amperomierza** i **woltomierza**, **niepewności pomiarowe**, przeliczanie
-**systemów liczbowych**, **II prawo Kirchhoffa** oraz rozwiązywanie **układów równań**
-metodą Cramera — wszystko z rozwiązaniem krok po kroku.
+**systemów liczbowych**, **II prawo Kirchhoffa**, rozwiązywanie **układów równań**
+metodą Cramera oraz **obliczanie prądów gałęzi w obwodzie** — wszystko z rozwiązaniem
+krok po kroku.
 
 ## 🔗 Aplikacja online
 
@@ -23,6 +24,10 @@ Po pierwszym otwarciu aplikacja działa bez internetu (service worker cache'uje 
 | Amperomierz — wskazania i niepewności | II prawo Kirchhoffa — rozwiązanie krok po kroku |
 |---|---|
 | ![Amperomierz](screenshot-mierniki.png) | ![II prawo Kirchhoffa](screenshot-kirchhoff.png) |
+
+| Układ równań — metoda Cramera | Obwód — schemat i prądy gałęzi |
+|---|---|
+| ![Układ równań](screenshot-rownania.png) | ![Obwód](screenshot-obwod.png) |
 
 ## Funkcje
 
@@ -102,12 +107,65 @@ Wzory, których używa:
 | Wyznacznik niewiadomej | `Wx = det(A z kolumną x zastąpioną prawymi stronami)` |
 | Rozwiązanie | `x = Wx / W` |
 
+### 5. Obwód — prądy gałęzi
+
+Najbardziej praktyczna zakładka: opisujesz **schemat obwodu** i dostajesz **wszystkie prądy**
+bez ręcznego układania i rozwiązywania równań.
+
+Obsługiwany układ to **dwa węzły** (górny **A**, dolny **B**) i **dowolna liczba gałęzi
+równoległych** między nimi — czyli klasyczny obwód z rozpływem prądów. Każda gałąź to szereg
+oporników `R` i źródeł `E`:
+
+1. Podaj nazwy prądów (`I1`, `I2`, `I3`…) i ustaw strzałkę odniesienia każdego prądu.
+2. Wpisz elementy każdej gałęzi od góry do dołu: **R** w omach, **E** w woltach.
+   Strzałka przy źródle mówi, w którą stronę SEM pcha prąd (`↑ A` — do górnego węzła, `↓ B` — do dolnego).
+3. Program **rysuje schemat** i liczy: napięcie między węzłami, prądy wszystkich gałęzi,
+   a na końcu sprawdza I i II prawo Kirchhoffa. Jeśli prąd wyjdzie ujemny, płynie przeciwnie
+   do strzałki — aplikacja to sygnalizuje.
+
+Metoda obliczeń (napięcie międzywęzłowe):
+
+| Krok | Wzór |
+|---|---|
+| Napięcie między węzłami | `U_AB = (∑ E/R) ÷ (∑ 1/R)` |
+| Prąd gałęzi | `I = (E − U_AB) / R` |
+
+**Przykład z dokumentu** (E1 = 2 V, E2 = 3 V, E3 = 5 V, R1 = 2 Ω, R2 = 3 Ω, R3 = 1 Ω,
+R4 = 4 Ω, R5 = 2 Ω) — przycisk **„Przykład z dokumentu”** wpisuje go jednym kliknięciem.
+Aplikacja odtwarza dokładnie równania z rozwiązania:
+
+```
+I prawo:            I1 + I2 = I3
+II prawo, oczko I:  3I1 + 3I3 = 5
+II prawo, oczko II: 3I3 + 6I2 = 8
+U_AB = 0,6 V
+I1 = 0,467 A    I2 = 0,733 A    I3 = 1,2 A
+```
+
+#### Rozpoznawanie schematu ze zdjęcia
+
+Możesz też **wgrać zdjęcie schematu** — model z obsługą obrazów odczyta gałęzie i wartości,
+a program od razu policzy prądy i narysuje schemat. Wymagania i zasady:
+
+* potrzebny jest **własny klucz API** do modelu z obsługą obrazów; w aplikacji wybierasz
+  dostawcę (Google Gemini, OpenAI, OpenRouter albo dowolny serwer zgodny z OpenAI),
+  model i adres API — ustawienia zapisują się w `localStorage`,
+* **klucz nigdy nie opuszcza Twojej przeglądarki** poza zapytaniem do wybranego dostawcy —
+  aplikacja nie ma żadnego backendu,
+* rozpoznanie to **propozycja**: zawsze sprawdź odczytane wartości na schemacie i popraw je
+  ręcznie, jeśli model się pomylił,
+* bez klucza zakładka działa normalnie — schemat wpisujesz ręcznie.
+
+![Obwód — schemat i prądy](screenshot-obwod.png)
+
 ### Jak to połączyć w zadaniu z praw Kirchhoffa
 
 1. W zakładce **II KIRCHHOFFA** zapisz równania kolejnych oczek (`∑E = ∑I·R`) i sprawdź znaki.
 2. Równania prądowe dla węzłów (`I1 = I2 + I3`) zapisz od razu w postaci współczynników.
 3. Wszystkie równania wpisz w zakładce **UKŁAD RÓWNAŃ**, nazwij niewiadome `I1`, `I2`, `I3`
    i odczytaj prądy wraz z pełnym rozwiązaniem.
+
+> Jeśli obwód ma **dwa węzły**, nie musisz tego robić ręcznie — zakładka **OBWÓD** zrobi to za Ciebie.
 
 ### Zapamiętywanie danych
 
@@ -140,7 +198,7 @@ python3 -m http.server 8000
 | `manifest.webmanifest` | metadane PWA: nazwa, ikony, tryb `standalone` |
 | `icon-192.png`, `icon-512.png` | ikony aplikacji (512 także jako `maskable`) |
 | `icon-180.png` | ikona dla iOS (`apple-touch-icon`) |
-| `screenshot-*.png` | zrzuty ekranu użyte w tym README (mierniki, Kirchhoff, układ równań) |
+| `screenshot-*.png` | zrzuty ekranu użyte w tym README (mierniki, Kirchhoff, układ równań, obwód) |
 | `PODZAIŁKI_ET.xlsx` | arkusz, który był pierwowzorem zakładki amperomierza/woltomierza |
 
 ## Technikalia
@@ -151,7 +209,8 @@ python3 -m http.server 8000
 * **Dowolna precyzja** w zakładce systemów liczbowych dzięki `BigInt`.
 * **Polski format liczb** — przecinek dziesiętny na wejściu i wyjściu.
 * **Tryb ciemny** — automatycznie wg ustawień systemowych (`prefers-color-scheme`).
-* **Responsywność** — układ mobilny; na wąskich ekranach zakładki zawijają się w dwie kolumny.
+* **Responsywność** — układ mobilny; zakładki układają się w siatce 3 kolumn, a schemat obwodu rysowany jest jako skalowalny SVG.
+* **Twoje dane zostają u Ciebie** — obliczenia i rysowanie schematu dzieją się lokalnie; jedyne połączenie z siecią to opcjonalne rozpoznawanie zdjęcia na wyraźne kliknięcie i tylko do wybranego przez Ciebie dostawcy.
 
 ### Hosting (GitHub Pages)
 
