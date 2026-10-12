@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Kalkulator Mierników</title>
+<meta name="description" content="Kalkulator mierników: wskazania amperomierza i woltomierza, niepewności pomiarowe, systemy liczbowe i II prawo Kirchhoffa.">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b5fff">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -35,8 +36,9 @@ td.out{font-variant-numeric:tabular-nums;text-align:right;font-weight:600;backgr
 th:last-child{text-align:right}
 .avg{display:flex;justify-content:space-between;margin-top:10px;padding:12px;border-radius:10px;background:var(--out);font-weight:700}
 button{margin-top:10px;font:inherit;font-size:14px;color:var(--acc);background:none;border:0;padding:6px 0}
-.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;margin-bottom:16px;background:var(--line);border-radius:12px}
-.tabs button{margin:0;padding:10px 0;font-weight:600;font-size:12.5px;color:var(--mut);border-radius:9px}
+.tabs{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:4px;padding:4px;margin-bottom:16px;background:var(--line);border-radius:12px}
+.tabs button{margin:0;padding:10px 2px;font-weight:600;font-size:12.5px;line-height:1.15;color:var(--mut);border-radius:9px;overflow-wrap:anywhere}
+@media(max-width:430px){.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .tabs button[aria-selected=true]{background:var(--card);color:var(--acc);box-shadow:0 1px 3px rgba(0,0,0,.15)}
 .card[hidden]{display:none}
 .hint{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--out);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:14px}
@@ -54,6 +56,23 @@ td.rel{font-size:13px;font-weight:500;padding:9px 6px;white-space:nowrap}
 .all{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font:14px ui-monospace,Menlo,monospace}
 .all b{color:var(--mut);font-weight:500}
 .sw{display:flex;justify-content:flex-end}
+.el{position:relative;border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
+.ehead{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px;padding-right:32px}
+.ehead select{flex:1 1 0;min-width:0;width:auto;font-size:12.5px;padding:6px 4px}
+.ehead select[data-f=sign]{flex:0 0 42px}
+.ehead .del{position:absolute;top:9px;right:8px;margin:0;padding:3px 5px;font-size:12px;line-height:1;color:var(--mut)}
+.ebody{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:8px}
+.ebody[hidden]{display:none}
+.kv{font-variant-numeric:tabular-nums;font-weight:600;font-size:17px;background:var(--out);border-radius:9px;padding:9px 10px;overflow-wrap:anywhere}
+.kbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.kbtns button{margin:0;padding:8px 12px;border:1px solid var(--line);border-radius:9px;font-weight:600}
+details.kn{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:0 0 12px;font-size:14px}
+details.kn summary{color:var(--acc);font-weight:600;cursor:pointer}
+details.kn p{margin:8px 0 4px;color:var(--mut);font-size:13.5px}
+details.kn ul{margin:4px 0;padding-left:18px;color:var(--mut);font-size:13.5px}
+details.kn li{margin-bottom:4px}
+.warn{color:#b54708;font-size:13.5px;margin:6px 0}
+@media(prefers-color-scheme:dark){.warn{color:#fdb022}}
 footer{color:var(--mut);font-size:12px;text-align:center}
 </style>
 </head>
@@ -64,7 +83,7 @@ footer{color:var(--mut);font-size:12px;text-align:center}
 <div class="hint" id="inst" hidden><span>Zainstaluj aplikację na tym urządzeniu.</span><button type="button" id="instgo" class="go">Zainstaluj</button></div>
 <div class="tabs" id="tabs" role="tablist"></div>
 <div id="app"></div>
-<footer>Mierniki: wartość = (α ÷ α maks.) × zakres · Δ = klasa × zakres ÷ 100 · δ = Δ ÷ wartość</footer>
+<footer>Mierniki: wartość = (α ÷ α maks.) × zakres · Δ = klasa × zakres ÷ 100 · δ = Δ ÷ wartość<br>II prawo Kirchhoffa: ∑E = ∑I·R</footer>
 </main>
 <script>
 const METERS=[
@@ -79,29 +98,31 @@ METERS.forEach(m=>{state[m.id]=state[m.id]||{range:m.range,max:m.max,unit:m.unit
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}};
 const num=s=>{const n=parseFloat(String(s).replace(",","."));return isFinite(n)?n:null};
 const fmt=n=>n===null?"–":(Math.round(n*1e6)/1e6).toString().replace(".",",");
+const escA=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const app=document.getElementById("app"),tabs=document.getElementById("tabs");
 const cards={};
-const ALL=[...METERS,{id:"n",title:"SYSTEMY"}];
+const ALL=[...METERS,{id:"n",title:"SYSTEMY"},{id:"k",title:"II PRAWO KIRCHHOFFA",tab:"II KIRCHHOFFA"}];
 function show(id){
  state.tab=id;
  ALL.forEach(m=>{cards[m.id].hidden=m.id!==id;tabs.querySelector(`[data-t=${m.id}]`).setAttribute("aria-selected",m.id===id)});
  save();
 }
-ALL.forEach(m=>{const b=document.createElement("button");b.type="button";b.dataset.t=m.id;b.setAttribute("role","tab");b.textContent=m.title;b.onclick=()=>show(m.id);tabs.appendChild(b)});
+tabs.style.setProperty("--n",ALL.length);
+ALL.forEach(m=>{const b=document.createElement("button");b.type="button";b.dataset.t=m.id;b.setAttribute("role","tab");b.textContent=m.tab||m.title;b.onclick=()=>show(m.id);tabs.appendChild(b)});
 METERS.forEach(m=>{
  const s=state[m.id], u=()=>s.unit;
  const card=document.createElement("section");card.className="card";
  card.innerHTML=`<h2>${m.title}</h2>
  <div class="row">
-  <div><label>Max zakres przyrządu</label><input data-k=range inputmode=decimal value="${s.range}"></div>
+  <div><label>Max zakres przyrządu</label><input data-k=range inputmode=decimal value="${escA(s.range)}"></div>
   <div><label>Jednostka</label><select data-k=unit>${m.units.map(x=>`<option${x==s.unit?" selected":""}>${x}</option>`).join("")}</select></div>
-  <div><label>Działki maks. (skala)</label><input data-k=max inputmode=decimal value="${s.max}"></div>
-  <div><label>Klasa dokładności</label><input data-k=cls inputmode=decimal value="${s.cls}"></div>
+  <div><label>Działki maks. (skala)</label><input data-k=max inputmode=decimal value="${escA(s.max)}"></div>
+  <div><label>Klasa dokładności</label><input data-k=cls inputmode=decimal value="${escA(s.cls)}"></div>
   <div><label>Stała C</label><input data-c readonly></div>
   <div><label>Błąd bezwzgl. Δ (±)</label><input data-d readonly></div>
  </div>
  <table><thead><tr><th>Lp</th><th>α [dz]</th><th>${m.label}</th><th>δ</th></tr></thead><tbody>
- ${s.alfa.map((a,i)=>`<tr><td>${i+1}</td><td><input data-i=${i} inputmode=decimal placeholder="dz" value="${a}"></td><td class=out></td><td class="out rel"></td></tr>`).join("")}
+ ${s.alfa.map((a,i)=>`<tr><td>${i+1}</td><td><input data-i=${i} inputmode=decimal placeholder="dz" value="${escA(a)}"></td><td class=out></td><td class="out rel"></td></tr>`).join("")}
  </tbody></table>
  <div class=avg><span>średnia:</span><span data-avg></span></div>
  <div class=sub data-avgrel></div>
@@ -142,7 +163,7 @@ METERS.forEach(m=>{
  const ns=state.n=state.n||{};ns.val=ns.val||"";ns.from=ns.from||10;ns.to=ns.to||2;
  const opt=(sel)=>Object.keys(BN).map(b=>`<option value=${b}${+b===+sel?" selected":""}>${BN[b]}</option>`).join("");
  sec.innerHTML=`<h2>KALKULATOR SYSTEMÓW</h2>
- <div class="row"><div style="grid-column:1/-1"><label>Liczba</label><input id=nv autocapitalize=characters autocomplete=off autocorrect=off spellcheck=false value="${ns.val}" placeholder="np. 255"></div>
+ <div class="row"><div style="grid-column:1/-1"><label>Liczba</label><input id=nv autocapitalize=characters autocomplete=off autocorrect=off spellcheck=false value="${escA(ns.val)}" placeholder="np. 255"></div>
  <div><label>Z systemu</label><select id=nf>${opt(ns.from)}</select></div>
  <div><label>Na system</label><select id=nt>${opt(ns.to)}</select></div></div>
  <div class=sw><button type=button id=nsw>⇄ Zamień systemy</button></div>
@@ -209,6 +230,184 @@ METERS.forEach(m=>{
   document.getElementById("nv").value=ns.val;document.getElementById("nf").value=ns.from;document.getElementById("nt").value=ns.to;render();
  };
  render();
+})();
+/* ---------- II PRAWO KIRCHHOFFA (napięciowe) ---------- */
+(function(){
+ const sec=document.createElement("section");sec.className="card";
+ const st=state.k=state.k||{};
+ const NEWROW=kind=>({kind:kind||"E",sign:1,unk:"",e:"",i:"",r:""});
+ const RESET=()=>{st.rows=[NEWROW("E"),NEWROW("U")]};
+ if(!Array.isArray(st.rows)||!st.rows.length)RESET();
+ st.rows=st.rows.filter(r=>r&&typeof r==="object").map(r=>({kind:r.kind,sign:r.sign,unk:r.unk,e:r.e,i:r.i,r:r.r}));
+ if(!st.rows.length)RESET();
+ st.rows.forEach(r=>{
+  r.kind=r.kind==="U"?"U":"E";
+  r.sign=r.sign===-1?-1:1;
+  ["e","i","r"].forEach(k=>{r[k]=r[k]==null?"":String(r[k])});
+  if(!(r.kind==="E"?"e":"ir").includes(r.unk))r.unk="";
+ });
+ sec.innerHTML=`<h2>II PRAWO KIRCHHOFFA</h2>
+ <p class="c">W dowolnym oczku obwodu suma algebraiczna sił elektromotorycznych równa się sumie spadków napięć: <b>∑E = ∑I·R</b>. Podawaj wartości w jednostkach podstawowych: V, A, Ω.</p>
+ <details class="kn"><summary>Jak ustalić znaki i co można obliczyć?</summary>
+  <p>Obiegamy oczko w wybranym kierunku (np. zgodnie z ruchem wskazówek zegara) i porównujemy go z kierunkiem prądu i SEM:</p>
+  <ul>
+   <li><b>SEM E</b> — znak „+”, gdy przechodzimy przez źródło od bieguna „−” do „+”, czyli SEM działa zgodnie z obiegiem; znak „−” w przeciwnym wypadku.</li>
+   <li><b>Spadek I·R</b> — znak „+”, gdy prąd płynie zgodnie z kierunkiem obiegu; znak „−”, gdy płynie przeciwnie.</li>
+  </ul>
+  <p>Przy wielkości, którą chcesz obliczyć, wybierz <b>szukane</b> i zostaw jej pole puste — program rozwiąże równanie. Wiersze bez żadnych danych są pomijane.</p>
+ </details>
+ <div id="klist"></div>
+ <div class="kbtns">
+  <button type="button" id="kaddE">+ SEM (E)</button>
+  <button type="button" id="kaddU">+ Spadek (I·R)</button>
+  <button type="button" id="kclr">Wyczyść</button>
+ </div>
+ <div id="kout"></div>`;
+ app.appendChild(sec);cards.k=sec;
+ const list=sec.querySelector("#klist"), kout=sec.querySelector("#kout");
+ const KOPT=[["E","SEM E"],["U","Spadek I·R"]];
+ const SOPT=[[1,"+"],[-1,"−"]];
+ const UOPT=[["","dane"],["e","szukane E"]], VOPT=[["","dane"],["i","szukane I"],["r","szukane R"]];
+ const opts=(a,v)=>a.map(([x,t])=>`<option value="${x}"${String(v)===String(x)?" selected":""}>${t}</option>`).join("");
+ function build(){
+  list.innerHTML="";
+  st.rows.forEach((row,idx)=>{
+   const el=document.createElement("div");el.className="el";
+   el.innerHTML=`<div class="ehead">
+    <select data-f="kind" aria-label="Rodzaj elementu">${opts(KOPT,row.kind)}</select>
+    <select data-f="sign" aria-label="Znak w równaniu">${opts(SOPT,row.sign)}</select>
+    <select data-f="unk" aria-label="Szukana wielkość">${opts(row.kind==="E"?UOPT:VOPT,row.unk)}</select>
+    <button type="button" class="del" data-f="del" aria-label="Usuń element">✕</button>
+   </div>
+   <div class="ebody" data-b="E"${row.kind==="E"?"":" hidden"}>
+    <div><label>E [V]</label><input data-f="e" inputmode="decimal" placeholder="V" value="${escA(row.e)}"></div>
+   </div>
+   <div class="ebody" data-b="U"${row.kind==="U"?"":" hidden"}>
+    <div><label>I [A]</label><input data-f="i" inputmode="decimal" placeholder="A" value="${escA(row.i)}"></div>
+    <div><label>R [Ω]</label><input data-f="r" inputmode="decimal" placeholder="Ω" value="${escA(row.r)}"></div>
+    <div><label>U = I·R [V]</label><div class="kv" data-f="uv">–</div></div>
+   </div>`;
+   el.addEventListener("input",e=>{
+    const f=e.target.dataset.f;
+    if(f==="e"||f==="i"||f==="r"){row[f]=e.target.value;calc()}
+   });
+   el.querySelector('[data-f="kind"]').onchange=e=>{row.kind=e.target.value;row.unk="";build()};
+   el.querySelector('[data-f="sign"]').onchange=e=>{row.sign=e.target.value==="-1"?-1:1;calc()};
+   el.querySelector('[data-f="unk"]').onchange=e=>{row.unk=e.target.value;if(row.unk)row[row.unk]="";build()};
+   el.querySelector('[data-f="del"]').onclick=()=>{st.rows.splice(idx,1);if(!st.rows.length)RESET();build()};
+   list.appendChild(el);
+  });
+  calc();
+ }
+ const L=a=>a.map(x=>`<div class="ln">${x}</div>`).join("");
+ const STP=(t,a,r)=>`<div class="step"><h3>${t}</h3>${L(a)}${r?`<div class="res">${r}</div>`:""}</div>`;
+ const SUB=n=>`<sub>${n}</sub>`;
+ const fv=v=>fmt(v).replace(/^-/,"−");
+ const par=v=>v<0?`(${fv(v)})`:fv(v);
+ const side=(arr,disp)=>arr.map((t,i)=>{const d=disp?disp[i]:t.lbl;return i?(t.sg<0?" − ":" + ")+d:(t.sg<0?"−":"")+d}).join("");
+ const tol=(a,b)=>1e-9*Math.max(1,Math.abs(a),Math.abs(b));
+ function calc(){
+  save();
+  // podgląd U = I·R w każdym wierszu
+  st.rows.forEach((row,idx)=>{
+   if(row.kind!=="U")return;
+   const node=list.children[idx]&&list.children[idx].querySelector('[data-f="uv"]');
+   if(!node)return;
+   const i=num(row.i),r=num(row.r);
+   node.textContent=(i!==null&&r!==null)?`${fv(i*r)} V`:"–";
+  });
+  const bad=[],warn=[];let sumE=0,sumU=0,uE=null,uU=null,nE=0,nU=0,nUnk=0;const tE=[],tU=[];
+  st.rows.forEach((row,idx)=>{
+   const sg=row.sign===-1?-1:1;
+   if(row.kind==="E"){
+    const raw=row.e.trim(),lbl=n=>"E"+SUB(n);
+    if(row.unk==="e"){
+     if(raw)warn.push(`Wiersz ${idx+1}: E oznaczono jako szukane, więc wpisana wartość „${escA(raw)}” jest pomijana.`);
+     nE++;nUnk++;uE={sg,lbl:lbl(nE)};tE.push({sg,lbl:lbl(nE),val:null});return;
+    }
+    if(raw==="")return;
+    const v=num(raw);
+    if(v===null){bad.push(`Wiersz ${idx+1}: „${escA(raw)}” nie jest poprawną liczbą (SEM E).`);return}
+    nE++;sumE+=sg*v;tE.push({sg,lbl:lbl(nE),val:v});
+   }else{
+    const ri=row.i.trim(),rr=row.r.trim();let unk=row.unk;
+    if(!unk){if(ri===""&&rr==="")return;if(ri==="")unk="i";else if(rr==="")unk="r"}
+    const otherSym=unk==="i"?"R":"I",ownSym=unk==="i"?"I":"R";
+    const otherRaw=unk==="i"?rr:ri,ownRaw=unk==="i"?ri:rr;
+    if(row.unk&&ownRaw)warn.push(`Wiersz ${idx+1}: ${ownSym} oznaczono jako szukane, więc wpisana wartość „${escA(ownRaw)}” jest pomijana.`);
+    nU++;const n=nU,lbl=`I${SUB(n)}·R${SUB(n)}`;
+    if(otherRaw===""){bad.push(`Wiersz ${idx+1}: aby obliczyć ${ownSym}, podaj ${otherSym}.`);return}
+    const other=num(otherRaw);
+    if(other===null){bad.push(`Wiersz ${idx+1}: „${escA(otherRaw)}” nie jest poprawną liczbą (${otherSym}).`);return}
+    if(other===0){bad.push(`Wiersz ${idx+1}: ${otherSym} = 0, więc nie można wyznaczyć ${ownSym} (dzielenie przez zero).`);return}
+    if(unk){nUnk++;uU={sg,lbl,n,which:unk,other,ownSym,otherSym};tU.push({sg,lbl,val:null,unk,other,ownSym,otherSym,n});return}
+    const i=num(ri),r=num(rr);
+    if(i===null||r===null)return;
+    sumU+=sg*i*r;tU.push({sg,lbl,val:i*r,i,r});
+   }
+  });
+  let h=bad.map(b=>`<div class="err">${b}</div>`).join("")+warn.map(w=>`<div class="warn">${w}</div>`).join("");
+  if(bad.length){kout.innerHTML=h;return}
+  if(!tE.length&&!tU.length){kout.innerHTML=h+`<div class="c" style="margin-top:14px">Uzupełnij dane elementów oczka, aby zobaczyć równanie i wynik.</div>`;return}
+  let sn=0;const K=()=>`Krok ${++sn}: `;
+  const dE=tE.map(t=>t.val===null?t.lbl:fv(t.val)),dU=tU.map(t=>t.val===null?t.lbl:fv(t.val));
+  h+=STP(K()+"Zapisujemy II prawo Kirchhoffa dla oczka",[
+   "∑E = ∑I·R",
+   `${side(tE)||"0"} = ${side(tU)||"0"}`,
+   `${side(tE,dE)||"0"} = ${side(tU,dU)||"0"}`
+  ]);
+  h+=STP(K()+"Sumujemy siły elektromotoryczne",[
+   ...tE.map(t=>t.val===null?`${t.lbl} = ?`:`${t.sg<0?"−":""}${t.lbl} = ${fv(t.sg*t.val)} V`),
+   `∑E${uE?" (znane)":""} = ${fv(sumE)} V`
+  ],`∑E = ${fv(sumE)} V`);
+  h+=STP(K()+"Sumujemy spadki napięć I·R",[
+   ...tU.map(t=>t.val===null?`${t.lbl} = ?`:`${t.sg<0?"−":""}${t.lbl} = ${t.sg<0?"−":""}(${fv(t.i)} · ${fv(t.r)}) = ${fv(t.sg*t.val)} V`),
+   `∑I·R${uU?" (znane)":""} = ${fv(sumU)} V`
+  ],`∑I·R = ${fv(sumU)} V`);
+  if(nUnk===0){
+   const diff=sumE-sumU,ok=Math.abs(diff)<=tol(sumE,sumU);
+   h+=STP(K()+"Sprawdzamy bilans oczka",[
+    `∑E − ∑I·R = ${fv(sumE)} − ${fv(sumU)} = ${fv(diff)} V`,
+    ok?"Obie strony są równe, więc równanie oczka jest spełnione."
+      :"Obie strony nie są równe. Sprawdź znaki (zgodność z kierunkiem obiegu) oraz wartości elementów."
+   ],ok?`∑E = ∑I·R ✓ równanie spełnione`:`∑E ≠ ∑I·R — różnica ${fv(diff)} V`);
+  }else if(nUnk>1){
+   h+=`<div class="err">Zaznacz tylko jedną szukaną wielkość (albo uzupełnij dane), aby obliczyć wynik.</div>`;
+  }else if(uE){
+   const sg=uE.sg<0?"−1":"+1",rhs=sumU-sumE,val=rhs/uE.sg;
+   h+=STP(K()+`Rozwiązujemy równanie — szukane ${uE.lbl}`,[
+    `∑E(pozostałe) + (${sg})·${uE.lbl} = ∑I·R`,
+    `(${sg})·${uE.lbl} = ${fv(sumU)} − ${par(sumE)}`,
+    `(${sg})·${uE.lbl} = ${fv(rhs)}`,
+    `${uE.lbl} = ${fv(rhs)} ÷ (${sg}) = ${fv(val)}`
+   ],`${uE.lbl} = ${fv(val)} V`)
+   +STP(K()+"Sprawdzamy otrzymany wynik",[
+    `∑E = ${fv(sumE+uE.sg*val)} V`,
+    `∑I·R = ${fv(sumU)} V`
+   ],`∑E = ∑I·R ✓`)
+   +(val<0?`<div class="warn">Wynik ujemny — przy przyjętym kierunku obiegu SEM ma zwrot przeciwny do założonego.</div>`:"");
+  }else{
+   const sg=uU.sg<0?"−1":"+1",rhs=sumE-sumU,prod=uU.sg*uU.other,val=rhs/prod;
+   const own=`${uU.ownSym}${SUB(uU.n)}`,unit=uU.which==="i"?"A":"Ω";
+   const term=uU.which==="i"?`${own}·${fv(uU.other)}`:`${fv(uU.other)}·${own}`;
+   h+=STP(K()+`Rozwiązujemy równanie — szukane ${own}`,[
+    `∑E = ∑I·R(pozostałe) + (${sg})·${uU.lbl}`,
+    `(${sg})·${uU.lbl} = ${fv(sumE)} − ${par(sumU)}`,
+    `(${sg})·${term} = ${fv(rhs)}`,
+    `${own} = ${fv(rhs)} ÷ ((${sg}) · ${fv(uU.other)}) = ${fv(val)}`
+   ],`${own} = ${fv(val)} ${unit}`)
+   +STP(K()+"Sprawdzamy otrzymany wynik",[
+    `∑E = ${fv(sumE)} V`,
+    `∑I·R = ${fv(sumU+prod*val)} V`
+   ],`∑E = ∑I·R ✓`)
+   +(val<0?`<div class="warn">Wynik ujemny — przy przyjętym kierunku obiegu prąd (lub spadek napięcia) ma zwrot przeciwny do założonego.</div>`:"");
+  }
+  kout.innerHTML=h;
+ }
+ sec.querySelector("#kaddE").onclick=()=>{st.rows.push(NEWROW("E"));build()};
+ sec.querySelector("#kaddU").onclick=()=>{st.rows.push(NEWROW("U"));build()};
+ sec.querySelector("#kclr").onclick=()=>{RESET();build()};
+ build();
 })();
 (function(){
  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
