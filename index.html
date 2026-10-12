@@ -100,8 +100,6 @@ details.kn li{margin-bottom:4px}
 .elr .u{font-size:12px;color:var(--mut);text-align:center}
 .elr .sd{margin:0;padding:5px 0;border:1px solid var(--line);border-radius:8px;font-size:13px;font-weight:700;color:var(--acc)}
 .elr .x{margin:0;padding:3px 4px;font-size:12px;color:var(--mut)}
-.foto img{max-width:100%;border-radius:10px;border:1px solid var(--line);margin-top:8px;display:block}
-input[type=file]{font-size:13px;padding:8px;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--mut)}
 footer{color:var(--mut);font-size:12px;text-align:center}
 </style>
 </head>
@@ -582,15 +580,6 @@ METERS.forEach(m=>{
  if(!Array.isArray(st.br)||!st.br.length)st.br=[BR("",null,[EL("R","")]),BR("",null,[EL("R","")])];
  st.br=st.br.filter(b=>b&&typeof b==="object").map(b=>BR(b.name,b.dir,Array.isArray(b.el)?b.el:null));
  st.br.forEach((b,i)=>{if(!b.name)b.name="I"+(i+1)});
- st.cfg=st.cfg&&typeof st.cfg==="object"?st.cfg:{};
- const PROVIDERS={
-  gemini:{base:"https://generativelanguage.googleapis.com/v1beta/openai",model:"gemini-2.5-flash"},
-  openai:{base:"https://api.openai.com/v1",model:"gpt-4o-mini"},
-  openrouter:{base:"https://openrouter.ai/api/v1",model:"google/gemini-2.5-flash"},
-  inny:{base:"",model:""}
- };
- st.cfg.prov=PROVIDERS[st.cfg.prov]?st.cfg.prov:"gemini";
- ["base","model","key"].forEach(k=>{st.cfg[k]=st.cfg[k]==null?"":String(st.cfg[k])});
  const EXAMPLE=[
   BR("I1","up",[EL("R",2),EL("E",2,"up"),EL("R",1)]),
   BR("I3","down",[EL("E",3,"down"),EL("R",3)]),
@@ -610,22 +599,9 @@ METERS.forEach(m=>{
  </div>
  <div id="osch"></div>
  <div id="oout"></div>
- <details class="kn" id="ofoto"><summary>Rozpoznaj schemat ze zdjęcia</summary>
-  <p>Zrób zdjęcie schematu i wgraj je — model z obsługą obrazów odczyta gałęzie i wartości, a program od razu policzy prądy. <b>Zawsze sprawdź odczyt</b>, bo rozpoznawanie rysunku może się pomylić; wpis możesz poprawić ręcznie powyżej.</p>
-  <p>Potrzebny jest <b>Twój klucz API</b> do modelu z obsługą obrazów. Klucz zostaje w pamięci tej przeglądarki i jest wysyłany wyłącznie do wybranego dostawcy — nigdzie indziej.</p>
-  <div class="row">
-   <div><label>Dostawca</label><select id="oprov">${Object.keys(PROVIDERS).map(k=>`<option value="${k}"${k===st.cfg.prov?" selected":""}>${k==="inny"?"inny (OpenAI-compatible)":k}</option>`).join("")}</select></div>
-   <div><label>Model</label><input id="omod" value="${escA(st.cfg.model)}" placeholder="${escA(PROVIDERS[st.cfg.prov].model)}"></div>
-   <div style="grid-column:1/-1"><label>Adres API (base URL)</label><input id="obase" value="${escA(st.cfg.base)}" placeholder="${escA(PROVIDERS[st.cfg.prov].base)}"></div>
-   <div style="grid-column:1/-1"><label>Klucz API</label><input id="okey" type="password" autocomplete="off" value="${escA(st.cfg.key)}" placeholder="np. AIza... / sk-..."></div>
-  </div>
-  <div class="foto"><label>Zdjęcie schematu</label><input type="file" id="ofile" accept="image/*"></div>
-  <div id="ostatus"></div>
-  <div class="kbtns"><button type="button" id="orun">Rozpoznaj i oblicz</button></div>
- </details>`;
+`;
  app.appendChild(sec);cards.o=sec;
- const list=sec.querySelector("#olist"),sch=sec.querySelector("#osch"),out=sec.querySelector("#oout"),stat=sec.querySelector("#ostatus");
- const prov=sec.querySelector("#oprov"),mod=sec.querySelector("#omod"),base=sec.querySelector("#obase"),key=sec.querySelector("#okey"),file=sec.querySelector("#ofile");
+ const list=sec.querySelector("#olist"),sch=sec.querySelector("#osch"),out=sec.querySelector("#oout");
  const L=a=>a.map(x=>`<div class="ln">${x}</div>`).join("");
  const STP=(t,a,r)=>`<div class="step"><h3>${t}</h3>${L(a)}${r?`<div class="res">${r}</div>`:""}</div>`;
  const sgn=v=>v<0?"−":"+";
@@ -807,92 +783,6 @@ METERS.forEach(m=>{
   h+=STP(K()+"Sprawdzenie",chk,(okNode&&okLoops)?"Prądy spełniają I i II prawo Kirchhoffa ✓":"Uwaga: któreś sprawdzenie się nie zgadza — sprawdź dane.");
   out.innerHTML=h;
  }
- // --- zdjęcie schematu ---
- let photo=null;
- function cfgRead(){
-  st.cfg.prov=prov.value;st.cfg.model=mod.value.trim();st.cfg.base=base.value.trim();st.cfg.key=key.value;save();
- }
- [prov,mod,base,key].forEach(el=>el.addEventListener("input",()=>{
-  if(el===prov){const p=PROVIDERS[prov.value];mod.placeholder=p.model;base.placeholder=p.base}
-  cfgRead();
- }));
- const PROMPT=["The image is a photo of a DC circuit diagram. It should contain two nodes (an upper one and a lower one) and several parallel branches connecting them.",
-"Return ONLY a JSON object, no markdown, no commentary, in exactly this shape:",
-'{"branches":[{"name":"I1","dir":"up","elements":[{"type":"R","value":2},{"type":"E","value":2,"dir":"up"},{"type":"R","value":1}]}]}',
-"Rules:",
-"- one entry in branches per branch of the circuit, ordered from left to right;",
-'- "dir" of a branch is the direction of the drawn current arrow: "up" = towards the upper node, "down" = towards the lower node;',
-"- elements are listed in series order, from the upper node to the lower node;",
-'- "type":"R" is a resistor (value in ohms), "type":"E" is a voltage source (value in volts);',
-'- for a source, "dir":"up" when its arrow points towards the upper node, otherwise "down";',
-"- values must be plain numbers with a dot as decimal separator, without units;",
-"- if a value is unreadable use 0;",
-'- if the drawing is not a two-node circuit with parallel branches, return {"error":"<short reason in Polish>"}.'].join("\n");
- function shrink(f,maxDim,cb){
-  const fr=new FileReader();
-  fr.onload=()=>{const im=new Image();
-   im.onload=()=>{const s=Math.min(1,maxDim/Math.max(im.width,im.height));
-    const w=Math.max(1,Math.round(im.width*s)),hh=Math.max(1,Math.round(im.height*s));
-    const cv=document.createElement("canvas");cv.width=w;cv.height=hh;
-    cv.getContext("2d").drawImage(im,0,0,w,hh);
-    cb(cv.toDataURL("image/jpeg",0.85),w,hh)};
-   im.onerror=()=>cb(null);im.src=fr.result};
-  fr.onerror=()=>cb(null);fr.readAsDataURL(f);
- }
- file.onchange=()=>{
-  const f=file.files&&file.files[0];
-  if(!f){photo=null;return}
-  shrink(f,1600,(url,w,h)=>{
-   if(!url){stat.innerHTML=`<div class="err">Nie udało się wczytać pliku graficznego.</div>`;return}
-   photo=url;
-   stat.innerHTML=`<div class="c">Wczytano zdjęcie ${w}×${h} px. Kliknij „Rozpoznaj i oblicz”.</div><img src="${url}" alt="Podgląd schematu">`;
-  });
- };
- sec.querySelector("#orun").onclick=async()=>{
-  cfgRead();
-  const b=base.value.trim()||PROVIDERS[prov.value].base;
-  const m=mod.value.trim()||PROVIDERS[prov.value].model;
-  if(!photo){stat.innerHTML=`<div class="err">Najpierw wybierz zdjęcie schematu.</div>`;return}
-  if(!b||!m){stat.innerHTML=`<div class="err">Podaj adres API i nazwę modelu.</div>`;return}
-  if(!key.value.trim()){stat.innerHTML=`<div class="err">Brak klucza API. Wpisz go powyżej — zostanie tylko w tej przeglądarce. Bez klucza możesz wpisać schemat ręcznie i tak policzy prądy.</div>`;return}
-  stat.innerHTML=`<div class="c">Pytam model ${escA(m)}…</div>`;
-  let r;
-  try{
-   r=await fetch(b.replace(/\/+$/,"")+"/chat/completions",{
-    method:"POST",
-    headers:{"Content-Type":"application/json","Authorization":"Bearer "+key.value.trim()},
-    body:JSON.stringify({model:m,temperature:0,messages:[{role:"user",content:[
-     {type:"text",text:PROMPT},
-     {type:"image_url",image_url:{url:photo}}
-    ]}]})
-   });
-  }catch(e){stat.innerHTML=`<div class="err">Nie udało się połączyć z API: ${escA(e.message)}. Sprawdź adres i połączenie z internetem.</div>`;return}
-  if(!r.ok){
-   let t="";try{t=await r.text()}catch(e){}
-   stat.innerHTML=`<div class="err">API zwróciło błąd ${r.status}. ${escA(t.slice(0,300))}</div>`;return;
-  }
-  let data;
-  try{data=await r.json()}catch(e){stat.innerHTML=`<div class="err">Odpowiedź API nie jest poprawnym JSON-em.</div>`;return}
-  const txt=(data&&data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||"";
-  const mm=String(txt).match(/\{[\s\S]*\}/);
-  if(!mm){stat.innerHTML=`<div class="err">Model nie zwrócił JSON-a. Odpowiedź: ${escA(String(txt).slice(0,300))}</div>`;return}
-  let obj;
-  try{obj=JSON.parse(mm[0])}catch(e){stat.innerHTML=`<div class="err">Nie udało się odczytać JSON-a z odpowiedzi modelu.</div>`;return}
-  if(obj.error){stat.innerHTML=`<div class="err">Model nie rozpoznał schematu: ${escA(String(obj.error))}</div>`;return}
-  if(!Array.isArray(obj.branches)||!obj.branches.length){stat.innerHTML=`<div class="err">W odpowiedzi nie ma listy gałęzi.</div>`;return}
-  st.br=obj.branches.slice(0,6).map((b,i)=>BR(
-   typeof b.name==="string"&&b.name.trim()?b.name.trim():"I"+(i+1),
-   b.dir==="down"?"down":"up",
-   (Array.isArray(b.elements)?b.elements:[]).map(e=>({
-    t:e&&e.type==="E"?"E":"R",
-    v:(e&&e.value!=null&&isFinite(Number(e.value)))?String(Number(e.value)).replace(".",","):"",
-    d:e&&e.dir==="down"?"down":"up"
-   }))
-  ));
-  st.br.forEach(b=>{if(!b.el.length)b.el=[EL("R","")]});
-  build();
-  stat.innerHTML=`<div class="c">Odczytano ${st.br.length} gałęzi — <b>sprawdź wartości na schemacie powyżej</b> i popraw, jeśli model się pomylił.</div><img src="${photo}" alt="Rozpoznany schemat">`;
- };
  build();
 })();
 (function(){

@@ -142,20 +142,6 @@ U_AB = 0,6 V
 I1 = 0,467 A    I2 = 0,733 A    I3 = 1,2 A
 ```
 
-#### Rozpoznawanie schematu ze zdjęcia
-
-Możesz też **wgrać zdjęcie schematu** — model z obsługą obrazów odczyta gałęzie i wartości,
-a program od razu policzy prądy i narysuje schemat. Wymagania i zasady:
-
-* potrzebny jest **własny klucz API** do modelu z obsługą obrazów; w aplikacji wybierasz
-  dostawcę (Google Gemini, OpenAI, OpenRouter albo dowolny serwer zgodny z OpenAI),
-  model i adres API — ustawienia zapisują się w `localStorage`,
-* **klucz nigdy nie opuszcza Twojej przeglądarki** poza zapytaniem do wybranego dostawcy —
-  aplikacja nie ma żadnego backendu,
-* rozpoznanie to **propozycja**: zawsze sprawdź odczytane wartości na schemacie i popraw je
-  ręcznie, jeśli model się pomylił,
-* bez klucza zakładka działa normalnie — schemat wpisujesz ręcznie.
-
 ![Obwód — schemat i prądy](screenshot-obwod.png)
 
 ### Jak to połączyć w zadaniu z praw Kirchhoffa
@@ -210,7 +196,7 @@ python3 -m http.server 8000
 * **Polski format liczb** — przecinek dziesiętny na wejściu i wyjściu.
 * **Tryb ciemny** — automatycznie wg ustawień systemowych (`prefers-color-scheme`).
 * **Responsywność** — układ mobilny; zakładki układają się w siatce 3 kolumn, a schemat obwodu rysowany jest jako skalowalny SVG.
-* **Twoje dane zostają u Ciebie** — obliczenia i rysowanie schematu dzieją się lokalnie; jedyne połączenie z siecią to opcjonalne rozpoznawanie zdjęcia na wyraźne kliknięcie i tylko do wybranego przez Ciebie dostawcy.
+* **Wszystko dzieje się lokalnie** — obliczenia i rysowanie schematu wykonują się w Twojej przeglądarce; aplikacja nie ma backendu i nie wysyła nigdzie żadnych danych.
 
 ### Hosting (GitHub Pages)
 
