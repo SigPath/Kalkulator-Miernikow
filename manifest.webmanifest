@@ -1,7 +1,7 @@
 {
   "name": "Kalkulator Mierników",
   "short_name": "Mierniki",
-  "description": "Kalkulator mierników: wskazania amperomierza i woltomierza, niepewności pomiarowe, systemy liczbowe i II prawo Kirchhoffa",
+  "description": "Kalkulator mierników: wskazania amperomierza i woltomierza, niepewności pomiarowe, systemy liczbowe, II prawo Kirchhoffa i układy równań",
   "lang": "pl",
   "start_url": "./",
   "scope": "./",

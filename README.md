@@ -2,7 +2,8 @@
 
 Prosta aplikacja webowa (PWA) do obliczeń na lekcjach elektrotechniki i miernictwa:
 wskazania **amperomierza** i **woltomierza**, **niepewności pomiarowe**, przeliczanie
-**systemów liczbowych** oraz **II prawo Kirchhoffa** — wszystko z rozwiązaniem krok po kroku.
+**systemów liczbowych**, **II prawo Kirchhoffa** oraz rozwiązywanie **układów równań**
+metodą Cramera — wszystko z rozwiązaniem krok po kroku.
 
 ## 🔗 Aplikacja online
 
@@ -79,6 +80,35 @@ z kierunkiem prądu i SEM:
 Wynik ujemny nie jest błędem — oznacza, że przy przyjętym kierunku obiegu dana wielkość ma
 zwrot przeciwny do założonego. Aplikacja wypisuje wtedy odpowiednie ostrzeżenie.
 
+### 4. Układ równań — metoda Cramera
+
+Do zadań z praw Kirchhoffa potrzebny jest jeszcze **układ równań**. Ta zakładka rozwiązuje
+układ **2 lub 3 równań liniowych** metodą wyznaczników (Cramera), pokazując cały tok obliczeń:
+
+* wpisujesz współczynniki w macierzy — puste pole oznacza `0`,
+* niewiadome możesz **nazwać** (np. `I1`, `I2`, `I3`) — nazwy pojawią się w zapisie i wyniku,
+* program liczy wyznacznik główny `W` (reguła Sarrusa), wyznaczniki `Wx`, `Wy`, `Wz`,
+  dzieli je i **sprawdza wynik**, podstawiając go z powrotem do równań,
+* gdy `W = 0`, aplikacja wyjaśnia, że układ jest nieoznaczony albo sprzeczny (metoda Cramera
+  nie daje wtedy wyniku).
+
+![Układ równań metodą Cramera](screenshot-rownania.png)
+
+Wzory, których używa:
+
+| Krok | Wzór |
+|---|---|
+| Wyznacznik główny | `W = det(A)` (dla 3×3 reguła Sarrusa) |
+| Wyznacznik niewiadomej | `Wx = det(A z kolumną x zastąpioną prawymi stronami)` |
+| Rozwiązanie | `x = Wx / W` |
+
+### Jak to połączyć w zadaniu z praw Kirchhoffa
+
+1. W zakładce **II KIRCHHOFFA** zapisz równania kolejnych oczek (`∑E = ∑I·R`) i sprawdź znaki.
+2. Równania prądowe dla węzłów (`I1 = I2 + I3`) zapisz od razu w postaci współczynników.
+3. Wszystkie równania wpisz w zakładce **UKŁAD RÓWNAŃ**, nazwij niewiadome `I1`, `I2`, `I3`
+   i odczytaj prądy wraz z pełnym rozwiązaniem.
+
 ### Zapamiętywanie danych
 
 Każda zakładka zapisuje swoje dane w przeglądarce (`localStorage`), więc po zamknięciu
@@ -110,7 +140,7 @@ python3 -m http.server 8000
 | `manifest.webmanifest` | metadane PWA: nazwa, ikony, tryb `standalone` |
 | `icon-192.png`, `icon-512.png` | ikony aplikacji (512 także jako `maskable`) |
 | `icon-180.png` | ikona dla iOS (`apple-touch-icon`) |
-| `screenshot-*.png` | zrzuty ekranu użyte w tym README |
+| `screenshot-*.png` | zrzuty ekranu użyte w tym README (mierniki, Kirchhoff, układ równań) |
 | `PODZAIŁKI_ET.xlsx` | arkusz, który był pierwowzorem zakładki amperomierza/woltomierza |
 
 ## Technikalia

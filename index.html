@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Kalkulator Mierników</title>
-<meta name="description" content="Kalkulator mierników: wskazania amperomierza i woltomierza, niepewności pomiarowe, systemy liczbowe i II prawo Kirchhoffa.">
+<meta name="description" content="Kalkulator mierników: wskazania amperomierza i woltomierza, niepewności pomiarowe, systemy liczbowe, II prawo Kirchhoffa i układy równań.">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b5fff">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -36,9 +36,8 @@ td.out{font-variant-numeric:tabular-nums;text-align:right;font-weight:600;backgr
 th:last-child{text-align:right}
 .avg{display:flex;justify-content:space-between;margin-top:10px;padding:12px;border-radius:10px;background:var(--out);font-weight:700}
 button{margin-top:10px;font:inherit;font-size:14px;color:var(--acc);background:none;border:0;padding:6px 0}
-.tabs{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:4px;padding:4px;margin-bottom:16px;background:var(--line);border-radius:12px}
-.tabs button{margin:0;padding:10px 2px;font-weight:600;font-size:12.5px;line-height:1.15;color:var(--mut);border-radius:9px;overflow-wrap:anywhere}
-@media(max-width:430px){.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:4px;padding:4px;margin-bottom:16px;background:var(--line);border-radius:12px}
+.tabs button{margin:0;padding:10px 2px;font-weight:600;font-size:12px;line-height:1.15;color:var(--mut);border-radius:9px;overflow-wrap:anywhere}
 .tabs button[aria-selected=true]{background:var(--card);color:var(--acc);box-shadow:0 1px 3px rgba(0,0,0,.15)}
 .card[hidden]{display:none}
 .hint{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--out);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:14px}
@@ -73,6 +72,13 @@ details.kn ul{margin:4px 0;padding-left:18px;color:var(--mut);font-size:13.5px}
 details.kn li{margin-bottom:4px}
 .warn{color:#b54708;font-size:13.5px;margin:6px 0}
 @media(prefers-color-scheme:dark){.warn{color:#fdb022}}
+.mx{display:grid;gap:6px;align-items:center;margin-bottom:12px}
+.mx input{font-size:15px;padding:7px 4px;text-align:center;font-variant-numeric:tabular-nums}
+.mx .ml{font-size:12px;color:var(--mut)}
+.mx .me{font-size:15px;color:var(--mut);text-align:center}
+.mx .nm{background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;color:var(--acc);font-weight:700;font-size:14px;padding:2px 0}
+.mx .rhs{background:var(--out)}
+.ln.pre{white-space:pre-wrap}
 footer{color:var(--mut);font-size:12px;text-align:center}
 </style>
 </head>
@@ -83,7 +89,7 @@ footer{color:var(--mut);font-size:12px;text-align:center}
 <div class="hint" id="inst" hidden><span>Zainstaluj aplikację na tym urządzeniu.</span><button type="button" id="instgo" class="go">Zainstaluj</button></div>
 <div class="tabs" id="tabs" role="tablist"></div>
 <div id="app"></div>
-<footer>Mierniki: wartość = (α ÷ α maks.) × zakres · Δ = klasa × zakres ÷ 100 · δ = Δ ÷ wartość<br>II prawo Kirchhoffa: ∑E = ∑I·R</footer>
+<footer>Mierniki: wartość = (α ÷ α maks.) × zakres · Δ = klasa × zakres ÷ 100 · δ = Δ ÷ wartość<br>II prawo Kirchhoffa: ∑E = ∑I·R<br>Układ równań (Cramer): x = Wx ÷ W</footer>
 </main>
 <script>
 const METERS=[
@@ -98,26 +104,27 @@ METERS.forEach(m=>{state[m.id]=state[m.id]||{range:m.range,max:m.max,unit:m.unit
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}};
 const num=s=>{const n=parseFloat(String(s).replace(",","."));return isFinite(n)?n:null};
 const fmt=n=>n===null?"–":(Math.round(n*1e6)/1e6).toString().replace(".",",");
+const fv=n=>fmt(n).replace(/^-/,"−");
 const escA=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const valV=s=>typeof s==="number"?fv(s):escA(s);
 const app=document.getElementById("app"),tabs=document.getElementById("tabs");
 const cards={};
-const ALL=[...METERS,{id:"n",title:"SYSTEMY"},{id:"k",title:"II PRAWO KIRCHHOFFA",tab:"II KIRCHHOFFA"}];
+const ALL=[...METERS,{id:"n",title:"SYSTEMY"},{id:"k",title:"II PRAWO KIRCHHOFFA",tab:"II KIRCHHOFFA"},{id:"r",title:"UKŁAD RÓWNAŃ"}];
 function show(id){
  state.tab=id;
  ALL.forEach(m=>{cards[m.id].hidden=m.id!==id;tabs.querySelector(`[data-t=${m.id}]`).setAttribute("aria-selected",m.id===id)});
  save();
 }
-tabs.style.setProperty("--n",ALL.length);
 ALL.forEach(m=>{const b=document.createElement("button");b.type="button";b.dataset.t=m.id;b.setAttribute("role","tab");b.textContent=m.tab||m.title;b.onclick=()=>show(m.id);tabs.appendChild(b)});
 METERS.forEach(m=>{
  const s=state[m.id], u=()=>s.unit;
  const card=document.createElement("section");card.className="card";
  card.innerHTML=`<h2>${m.title}</h2>
  <div class="row">
-  <div><label>Max zakres przyrządu</label><input data-k=range inputmode=decimal value="${escA(s.range)}"></div>
+  <div><label>Max zakres przyrządu</label><input data-k=range inputmode=decimal value="${valV(s.range)}"></div>
   <div><label>Jednostka</label><select data-k=unit>${m.units.map(x=>`<option${x==s.unit?" selected":""}>${x}</option>`).join("")}</select></div>
-  <div><label>Działki maks. (skala)</label><input data-k=max inputmode=decimal value="${escA(s.max)}"></div>
-  <div><label>Klasa dokładności</label><input data-k=cls inputmode=decimal value="${escA(s.cls)}"></div>
+  <div><label>Działki maks. (skala)</label><input data-k=max inputmode=decimal value="${valV(s.max)}"></div>
+  <div><label>Klasa dokładności</label><input data-k=cls inputmode=decimal value="${valV(s.cls)}"></div>
   <div><label>Stała C</label><input data-c readonly></div>
   <div><label>Błąd bezwzgl. Δ (±)</label><input data-d readonly></div>
  </div>
@@ -302,7 +309,6 @@ METERS.forEach(m=>{
  const L=a=>a.map(x=>`<div class="ln">${x}</div>`).join("");
  const STP=(t,a,r)=>`<div class="step"><h3>${t}</h3>${L(a)}${r?`<div class="res">${r}</div>`:""}</div>`;
  const SUB=n=>`<sub>${n}</sub>`;
- const fv=v=>fmt(v).replace(/^-/,"−");
  const par=v=>v<0?`(${fv(v)})`:fv(v);
  const side=(arr,disp)=>arr.map((t,i)=>{const d=disp?disp[i]:t.lbl;return i?(t.sg<0?" − ":" + ")+d:(t.sg<0?"−":"")+d}).join("");
  const tol=(a,b)=>1e-9*Math.max(1,Math.abs(a),Math.abs(b));
@@ -407,6 +413,141 @@ METERS.forEach(m=>{
  sec.querySelector("#kaddE").onclick=()=>{st.rows.push(NEWROW("E"));build()};
  sec.querySelector("#kaddU").onclick=()=>{st.rows.push(NEWROW("U"));build()};
  sec.querySelector("#kclr").onclick=()=>{RESET();build()};
+ build();
+})();
+/* ---------- UKŁAD RÓWNAŃ (metoda Cramera) ---------- */
+(function(){
+ const sec=document.createElement("section");sec.className="card";
+ const st=state.r=state.r||{};
+ const DEFN=["x","y","z"];
+ st.n=st.n===3?3:2;
+ if(!Array.isArray(st.names)||st.names.length!==3)st.names=DEFN.slice();
+ st.names=st.names.map((v,i)=>v==null?DEFN[i]:String(v));
+ const oldC=Array.isArray(st.c)?st.c:[];
+ st.c=[0,1,2].map(i=>{const src=Array.isArray(oldC[i])?oldC[i]:[];return [0,1,2,3].map(j=>src[j]==null?"":String(src[j]))});
+ sec.innerHTML=`<h2>UKŁAD RÓWNAŃ</h2>
+ <p class="c">Rozwiązywanie układu 2 lub 3 równań liniowych <b>metodą Cramera</b> (wyznaczniki) — krok po kroku. Niewiadome możesz nazwać, np. <b>I1</b>, <b>I2</b>, <b>I3</b>.</p>
+ <div class="row"><div style="grid-column:1/-1"><label>Liczba równań i niewiadomych</label><select id="rn"><option value="2">2 równania</option><option value="3">3 równania</option></select></div></div>
+ <div id="rmx"></div>
+ <div class="kbtns"><button type="button" id="rclr">Wyczyść</button></div>
+ <div id="rout"></div>`;
+ app.appendChild(sec);cards.r=sec;
+ const mx=sec.querySelector("#rmx"),rout=sec.querySelector("#rout"),sel=sec.querySelector("#rn");
+ const L=a=>a.map(x=>typeof x==="string"?`<div class="ln">${x}</div>`:`<div class="ln pre">${x.pre}</div>`).join("");
+ const STP=(t,a,r)=>`<div class="step"><h3>${t}</h3>${L(a)}${r?`<div class="res">${r}</div>`:""}</div>`;
+ const nm=()=>{const o=[];for(let j=0;j<st.n;j++)o.push((st.names[j]||"").trim()||DEFN[j]);return o};
+ const series=it=>{let s="";it.forEach((x,i)=>{s+=i===0?(x.neg?"−"+x.body:x.body):(x.neg?" − "+x.body:" + "+x.body)});return s===""?"0":s};
+ function build(){
+  const n=st.n;
+  let h=`<div class="mx" style="grid-template-columns:auto repeat(${n},minmax(0,1fr)) auto minmax(0,1fr)">`;
+  h+=`<div></div>`;
+  for(let j=0;j<n;j++)h+=`<input class="nm" data-nm="${j}" value="${escA(st.names[j])}" aria-label="nazwa niewiadomej ${j+1}">`;
+  h+=`<div class="me">=</div><div></div>`;
+  for(let i=0;i<n;i++){
+   h+=`<div class="ml">R${i+1}</div>`;
+   for(let j=0;j<n;j++)h+=`<input data-c="${i},${j}" inputmode="decimal" aria-label="współczynnik w równaniu ${i+1}" value="${escA(st.c[i][j])}">`;
+   h+=`<div class="me">=</div><input class="rhs" data-c="${i},3" inputmode="decimal" aria-label="prawa strona równania ${i+1}" value="${escA(st.c[i][3])}">`;
+  }
+  mx.innerHTML=h+`</div>`;
+  calc();
+ }
+ mx.addEventListener("input",e=>{
+  const d=e.target.dataset;
+  if(d.nm!==undefined)st.names[+d.nm]=e.target.value;
+  else if(d.c){const p=d.c.split(",");st.c[+p[0]][+p[1]]=e.target.value}
+  else return;
+  calc();
+ });
+ sel.onchange=()=>{st.n=+sel.value;build()};
+ sec.querySelector("#rclr").onclick=()=>{st.c=[0,1,2].map(()=>["","","",""]);build()};
+ function calc(){
+  save();
+  const n=st.n,nazwy=nm(),bad=[],A=[],B=[];let any=false;
+  for(let i=0;i<n;i++){
+   const row=[];
+   for(let j=0;j<n;j++){
+    const raw=(st.c[i][j]||"").trim();
+    if(raw)any=true;
+    if(raw===""){row.push(0);continue}
+    const v=num(raw);
+    if(v===null){bad.push(`Równanie ${i+1}: „${escA(raw)}” nie jest poprawną liczbą (kolumna ${escA(nazwy[j])}).`);row.push(0)}
+    else row.push(v);
+   }
+   const rb=(st.c[i][3]||"").trim();let b=0;
+   if(rb){any=true;const v=num(rb);if(v===null)bad.push(`Równanie ${i+1}: „${escA(rb)}” nie jest poprawną liczbą (prawa strona).`);else b=v}
+   A.push(row);B.push(b);
+  }
+  let h=bad.map(x=>`<div class="err">${x}</div>`).join("");
+  if(bad.length){rout.innerHTML=h;return}
+  if(!any){rout.innerHTML=h+`<div class="c" style="margin-top:12px">Wpisz współczynniki przy niewiadomych i prawe strony równań.</div>`;return}
+  const eq=i=>{
+   let s="";
+   for(let j=0;j<n;j++){
+    const v=A[i][j];if(v===0)continue;
+    const a=Math.abs(v),t=(a===1?"":fv(a))+escA(nazwy[j]);
+    s+=s===""?(v<0?"−":"")+t:(v<0?" − ":" + ")+t;
+   }
+   return (s===""?"0":s)+" = "+fv(B[i]);
+  };
+  const d2=m=>m[0][0]*m[1][1]-m[0][1]*m[1][0];
+  const d3=m=>m[0][0]*m[1][1]*m[2][2]+m[0][1]*m[1][2]*m[2][0]+m[0][2]*m[1][0]*m[2][1]
+              -m[0][2]*m[1][1]*m[2][0]-m[0][0]*m[1][2]*m[2][1]-m[0][1]*m[1][0]*m[2][2];
+  const terms=m=>n===2
+   ?[[1,[m[0][0],m[1][1]]],[-1,[m[0][1],m[1][0]]]]
+   :[[1,[m[0][0],m[1][1],m[2][2]]],[1,[m[0][1],m[1][2],m[2][0]]],[1,[m[0][2],m[1][0],m[2][1]]],
+     [-1,[m[0][2],m[1][1],m[2][0]]],[-1,[m[0][0],m[1][2],m[2][1]]],[-1,[m[0][1],m[1][0],m[2][2]]]];
+  const matLines=(m,label)=>{
+   const w=[];
+   for(let j=0;j<n;j++)w.push(Math.max.apply(null,m.map(r=>fv(r[j]).length)));
+   return m.map((r,i)=>(i===0?label+" = ":" ".repeat(label.length+3))+"| "+r.map((v,j)=>fv(v).padStart(w[j])).join("  ")+" |");
+  };
+  const detLines=(m,label)=>{
+   const ts=terms(m),prods=ts.map(t=>t[0]*t[1].reduce((a,b)=>a*b,1));
+   const sum=prods.reduce((a,b)=>a+b,0);
+   const f1=series(ts.map(t=>({neg:t[0]<0,body:t[1].map(v=>v<0?"("+fv(v)+")":fv(v)).join("·")})));
+   const f2=series(prods.map(p=>({neg:p<0,body:fv(Math.abs(p))})));
+   return {lines:[{pre:matLines(m,label).join("\n")},`${label} = ${f1}`,`${label} = ${f2}`,`${label} = ${fv(sum)}`],value:sum};
+  };
+  let sn=0;const K=()=>`Krok ${++sn}: `;
+  h+=STP(K()+"Zapisujemy układ równań",Array.from({length:n},(_,i)=>eq(i)));
+  const W=detLines(A,"W");
+  h+=STP(K()+"Liczymy wyznacznik główny W",W.lines,`W = ${fv(W.value)}`);
+  let scale=1;
+  A.forEach(r=>r.forEach(v=>{if(Math.abs(v)>scale)scale=Math.abs(v)}));
+  if(Math.abs(W.value)<=1e-10*Math.max(1,Math.pow(scale,n))){
+   h+=`<div class="err">Wyznacznik główny W = 0, więc układ nie ma jednoznacznego rozwiązania — jest nieoznaczony albo sprzeczny. Metoda Cramera nie daje wtedy wyniku; sprawdź równania.</div>`;
+   rout.innerHTML=h;return;
+  }
+  const Wk=[],xs=[],lines=[];
+  for(let k=0;k<n;k++){
+   const M=A.map((row,i)=>row.map((v,j)=>j===k?B[i]:v));
+   const d=detLines(M,"W"+escA(nazwy[k]));
+   Wk.push(d.value);xs.push(d.value/W.value);lines.push(...d.lines);
+  }
+  h+=STP(K()+"Liczymy wyznaczniki dla każdej niewiadomej",[
+   "W każdym z nich kolumnę danej niewiadomej zastępujemy prawymi stronami równań.",
+   ...lines
+  ]);
+  h+=STP(K()+"Dzielimy wyznaczniki — otrzymujemy rozwiązanie",
+   xs.map((x,k)=>`${escA(nazwy[k])} = W${escA(nazwy[k])} ÷ W = ${fv(Wk[k])} ÷ ${fv(W.value)} = ${fv(x)}`),
+   xs.map((x,k)=>`${escA(nazwy[k])} = ${fv(x)}`).join("<br>"));
+  const chk=[];let ok=true;
+  for(let i=0;i<n;i++){
+   const it=[];let left=0;
+   for(let j=0;j<n;j++){
+    const a=A[i][j];if(a===0)continue;
+    left+=a*xs[j];
+    it.push({neg:(a<0)!==(xs[j]<0),body:`${fv(Math.abs(a))}·${xs[j]<0?"("+fv(xs[j])+")":fv(xs[j])}`});
+   }
+   const good=Math.abs(left-B[i])<=1e-9*Math.max(1,Math.abs(B[i]));
+   if(!good)ok=false;
+   chk.push(`R${i+1}: ${series(it)} = ${fv(left)}   (prawa: ${fv(B[i])}) ${good?"✓":"✗"}`);
+  }
+  h+=STP(K()+"Sprawdzamy rozwiązanie, podstawiając je do równań",chk,
+   ok?"Rozwiązanie spełnia wszystkie równania ✓":"Uwaga: któreś równanie nie zgadza się — sprawdź dane.");
+  rout.innerHTML=h;
+ }
+ sel.value=String(st.n);
  build();
 })();
 (function(){
