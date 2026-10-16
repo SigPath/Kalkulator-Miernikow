@@ -33,7 +33,7 @@
     <div class="cp-panels" id="cpPanels"></div>
   </div>`;
   window.EXTRA_TABS = window.EXTRA_TABS || [];
-  window.EXTRA_TABS.push({ id: "k", title: "KALKULATOR", card });
+  window.EXTRA_TABS.push({ id: "c", title: "KALKULATOR", card });
 
   const input = card.querySelector("#cpInput");
   const preview = card.querySelector("#cpPreview");
