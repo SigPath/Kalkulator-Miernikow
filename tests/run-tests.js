@@ -122,9 +122,11 @@ function approx(a, b, tol) { return Math.abs(a - b) <= (tol || 1e-9); }
 /* ---------------- nierówności ---------------- */
 {
   let r = evalText("solve(x^2-4<0,x)");
-  check("ineq quad", r.ok && r.desc.includes("-2") && r.desc.includes("2"), JSON.stringify(r.desc));
+  check("ineq quad", r.ok && r.desc.includes("-2") && r.desc.includes("2") && r.desc.startsWith("(") && r.desc.endsWith(")"), JSON.stringify(r.desc));
   r = evalText("2*x+3>=5");
-  check("ineq linear", r.ok && r.desc.includes("1"), JSON.stringify(r.desc));
+  check("ineq linear", r.ok && r.desc.includes("1") && r.desc.includes("["), JSON.stringify(r.desc));
+  r = evalText("solve(x^2-9>0,x)");
+  check("ineq strict excluded", r.ok && r.desc.includes("(-100, -3)") && r.desc.includes("(3, 100)"), JSON.stringify(r.desc));
   r = evalText("solve(sin(x)>0,x)");
   check("ineq trig window", r.ok && r.info.some(s => s.includes("okresowo")), JSON.stringify(r.info));
 }

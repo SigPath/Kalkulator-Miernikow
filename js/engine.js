@@ -355,15 +355,8 @@
         return show(n);
       };
       if (op === "/") return `<span class="frac"><span class="num">${wrap(args[0])}</span><span class="den">${wrap(args[1])}</span></span>`;
-      if (op === "*") {
-        // mnożenie jawne vs niejawne
-        const parts = args.map((a, k) => {
-          let s = wrap(a);
-          return s;
-        });
-        return parts.join("·");
-      }
-      if (op === "-") return "−" + wrap(args[0]);
+      if (op === "*") return args.map(wrap).join("·");
+      if (op === "-") return args.length === 2 ? wrap(args[0]) + "−" + wrap(args[1]) : "−" + wrap(args[0]);
       if (op === "+") return args.map(wrap).join("+");
       if (op === "^") return `${wrap(args[0])}<sup>${show(args[1])}</sup>`;
       return args.map(wrap).join(" " + op + " ");
@@ -404,7 +397,10 @@
     } catch (e) {
       throw new Error("Nie udało się skompilować wyrażenia: " + e.message);
     }
-    const scopeObj = Object.assign({}, scope.vars);
+    // zakres: zmienne + funkcje zdefiniowane przez użytkownika
+    const fnsScope = {};
+    for (const [name, fn] of Object.entries(scope.fns)) fnsScope[name] = fn.fn || fn.compiled;
+    const scopeObj = Object.assign({}, scope.vars, fnsScope);
     return function (x) {
       try {
         scopeObj[varName || "x"] = x;
@@ -720,12 +716,13 @@
         intervals.push([lo, hi]);
       }
     }
-    // krańce spełniające nierówność (dla <= >=)
-    const endpointHolds = (x) => { const fv = f(x); return isFinite(fv) && fv === 0; };
+    // krańce: punkt graniczny spełnia nierówność tylko dla <= i >=
+    const endpointHolds = (x) => { const fv = f(x); return !strict && isFinite(fv) && Math.abs(fv) < 1e-9; };
     // budowa opisu
     const fmtPoint = (p) => p.exact ? p.exact : fmtNum(p.v);
     let desc = intervals.map(([lo, hi]) => {
-      const l = lo.excl ? "(" : "[", r = hi.excl ? ")" : "]";
+      const l = endpointHolds(lo.v) ? "[" : "(";
+      const r = endpointHolds(hi.v) ? "]" : ")";
       return `${l}${fmtPoint(lo)}, ${fmtPoint(hi)}${r}`;
     }).join(" ∪ ");
     // pojedyncze punkty (np. x^2>=0)
@@ -736,6 +733,7 @@
     }
     const notes = [];
     if (hasTrig) notes.push("Przedziały podane w oknie [−3π, 3π]; rozwiązanie powtarza się okresowo (okres 2π dla sin/cos).");
+    if (intervals.some(([lo, hi]) => lo.excl || hi.excl)) notes.push("Rozwiązanie kontynuuje poza okno analizy.");
     return { desc, intervals, notes, boundary };
   }
 
@@ -893,6 +891,8 @@
         // wszystko znane → wynik dokładny (nerdamer) + przybliżenie (mathjs)
         let exact = null;
         try { exact = nerdamer(toNerdamer(norm)).text(); } catch (e) {}
+        // nerdamer nie zna funkcji użytkownika — taki „dokładny” tekst (np. 10*h) jest mylący
+        if (exact && Object.keys(scope.fns).some(n => new RegExp("\\b" + n + "\\b").test(exact))) exact = null;
         const approx = evaluateNumeric(norm);
         result.ok = true;
         result.kind = isComplex(approx) ? "complex" : "number";

@@ -1,7 +1,7 @@
 {
   "name": "Kalkulator Mierników",
   "short_name": "Mierniki",
-  "description": "Kalkulator wskazań amperomierza i woltomierza",
+  "description": "Kalkulator mierników, systemów liczbowych oraz kalkulator naukowy z CAS, wykresami, macierzami i statystyką",
   "lang": "pl",
   "start_url": "./",
   "scope": "./",
