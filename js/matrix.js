@@ -61,8 +61,15 @@
     for (let r = 0; r < s.r; r++) {
       const row = [];
       for (let c = 0; c < s.c; c++) {
-        const v = parseFloat(String(s.d[r * s.c + c] ?? "").replace(",", "."));
-        if (!isFinite(v)) throw new Error(`Macierz ${which}: komórka [${r + 1},${c + 1}] nie jest liczbą.`);
+        const raw = String(s.d[r * s.c + c] ?? "").trim();
+        let v;
+        try {
+          // pozwalamy na wyrażenia i liczby zespolone, np. 1+2i, sqrt(2), pi/4
+          v = math.evaluate(raw.replace(/,/g, "."));
+        } catch (e) { v = NaN; }
+        const isNum = typeof v === "number" && isFinite(v);
+        const isCx = v && typeof v === "object" && typeof v.re === "number" && isFinite(v.re) && isFinite(v.im);
+        if (!isNum && !isCx) throw new Error(`Macierz ${which}: komórka [${r + 1},${c + 1}] nie jest liczbą (dozwolone też zespolone, np. 1+2i).`);
         row.push(v);
       }
       d.push(row);
@@ -70,6 +77,7 @@
     return d;
   }
   const flat = (m) => Array.isArray(m[0]) ? m.flat() : m;
+  const hasComplex = (m) => flat(Array.isArray(m[0]) ? m : [m]).some(v => v && typeof v === "object" && typeof v.re === "number");
 
   function renderMatrix(which) {
     const s = store[which];
@@ -140,7 +148,9 @@
           out.innerHTML = htmlMatrix(math.inv(mA).toArray(), "A⁻¹"); break;
         }
         case "trans": out.innerHTML = htmlMatrix(math.transpose(mA).toArray(), "Aᵀ"); break;
-        case "rank": out.innerHTML = `<div class="m-resblock"><div class="m-reslabel">rz(A)</div><b>${math.rank(A)}</b></div>`; break;
+        case "rank":
+          if (hasComplex(A)) throw new Error("Rząd macierzy liczony tylko dla macierzy rzeczywistych.");
+          out.innerHTML = `<div class="m-resblock"><div class="m-reslabel">rz(A)</div><b>${math.rank(A)}</b></div>`; break;
         case "pow": {
           const k = parseInt(prompt2("Potęga k (1–8):", "2"), 10);
           if (!Number.isInteger(k) || k < 1 || k > 8) throw new Error("Podaj k od 1 do 8.");
@@ -202,6 +212,7 @@
         out.innerHTML = `<b>|a| = ${fmt(math.norm(va))}</b>`;
       } else if (op === "angle") {
         if (va.length !== vb.length) throw new Error("Wektory różnych długości.");
+        if (hasComplex(va) || hasComplex(vb)) throw new Error("Kąt między wektorami liczony tylko dla wektorów rzeczywistych.");
         const cos = math.dot(va, vb) / (math.norm(va) * math.norm(vb));
         const ang = Math.acos(Math.max(-1, Math.min(1, cos))) * 180 / Math.PI;
         out.innerHTML = `<b>kąt(a,b) ≈ ${fmt(Math.round(ang * 100) / 100)}°</b> (cos = ${fmt(Math.round(cos * 1e6) / 1e6)})`;

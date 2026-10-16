@@ -9,6 +9,7 @@
     fns: [{ t: "x^2", on: true }, { t: "2*x-1", on: true }],
     pt: { x: "3*cos(t)", y: "3*sin(t)", t0: "0", t1: "6.2832" },
     polar: { r: "1+2*cos(theta)", th0: "0", th1: "6.2832" },
+    ode: { f: "-2*y", x0: "0", y0: "1", x1: "5" },
     win: { xmin: -10, xmax: 10 },
     trace: false
   };
@@ -24,6 +25,7 @@
     <button type="button" data-m="cart" aria-selected="true">y = f(x)</button>
     <button type="button" data-m="param">parametryczna</button>
     <button type="button" data-m="polar">biegunowa</button>
+    <button type="button" data-m="ode">y' = f(x,y)</button>
     <button type="button" data-m="table">tabela</button>
   </div>
   <div class="g-fns" id="gFns"></div>
@@ -35,6 +37,13 @@
   <div class="g-param" id="gPolar" hidden>
     <div class="g-prow"><label>r(θ)=</label><input id="gPR"></div>
     <div class="g-prow"><label>θ od</label><input id="gPTh0" inputmode=decimal><label>do</label><input id="gPTh1" inputmode=decimal></div>
+  </div>
+  <div class="g-param" id="gOde" hidden>
+    <div class="g-prow"><label>y' =</label><input id="gOF" spellcheck="false" autocapitalize="off"></div>
+    <div class="g-prow"><label>warunek: x₀ =</label><input id="gOX0" inputmode=decimal style="max-width:70px">
+      <label>y₀ =</label><input id="gOY0" inputmode=decimal style="max-width:70px">
+      <label>rysuj do x₁ =</label><input id="gOX1" inputmode=decimal style="max-width:70px"></div>
+    <div class="g-prow" style="font-size:12px;color:var(--mut)">Krzywa całkowa przez punkt (x₀, y₀) — metoda Rungego-Kotty 4. rzędu.</div>
   </div>
   <div class="g-canvaswrap"><canvas id="gCanvas"></canvas><div class="g-readout" id="gRead" hidden></div></div>
   <div class="g-tools">
@@ -191,6 +200,14 @@
         }
         ctx.stroke();
       }
+    } else if (store.mode === "ode") {
+      odePtsAll = drawOde(W);
+      // znacznik warunku początkowego
+      const x0 = num(store.ode.x0, 0), y0 = num(store.ode.y0, 1);
+      if (isFinite(x0) && isFinite(y0)) {
+        ctx.fillStyle = acc; ctx.strokeStyle = bg; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(X2P(W, x0), Y2P(W, y0), 5, 0, 7); ctx.fill(); ctx.stroke();
+      }
     }
     // znaczniki analiz
     const mark = (x, y, kind, color) => {
@@ -223,6 +240,31 @@
     } catch (e) { return {}; }
   }
   const num = (v, d) => { const n = parseFloat(String(v).replace(",", ".")); return isFinite(n) ? n : d; };
+
+  /* ---------- ODE: krzywa całkowa y' = f(x, y) przez (x0, y0) ---------- */
+  let odePtsAll = [];
+  function drawOde(W) {
+    let pts = [];
+    try {
+      const f = E.compile2(store.ode.f, "x", "y");
+      const x0 = num(store.ode.x0, 0), y0 = num(store.ode.y0, 1), x1 = num(store.ode.x1, 5);
+      if (!isFinite(x0) || !isFinite(y0) || !isFinite(x1) || x0 === x1) return pts;
+      const fwd = E.odeRK4(f, x0, y0, x1, 900);
+      const bwd = E.odeRK4(f, x0, y0, 2 * x0 - x1, 900);
+      pts = bwd.reverse().concat(fwd);
+    } catch (e) { return pts; }
+    ctx.strokeStyle = COLORS[0]; ctx.lineWidth = 2;
+    ctx.beginPath();
+    let started = false;
+    for (const [px, py] of pts) {
+      if (!isFinite(py)) { started = false; continue; }
+      const sx = X2P(W, px), sy = Y2P(W, py);
+      if (sy < -3000 || sy > 3000) { started = false; continue; }
+      started ? ctx.lineTo(sx, sy) : (ctx.moveTo(sx, sy), started = true);
+    }
+    ctx.stroke();
+    return pts;
+  }
 
   /* ---------- interakcje: pan / zoom / trace ---------- */
   let drag = null, pointers = new Map(), tracePt = null, pinch = null;
@@ -279,6 +321,12 @@
       const y = c.fn(x);
       tracePt = isFinite(y) ? { x, y } : { x, y: 0 };
       showRead(`x = ${E.fmtNum(x)}   y = ${isFinite(y) ? E.fmtNum(y) : "—"}`);
+    } else if (store.mode === "ode") {
+      if (!odePtsAll.length) return;
+      let best = odePtsAll[0];
+      for (const p of odePtsAll) if (Math.abs(p[0] - x) < Math.abs(best[0] - x)) best = p;
+      tracePt = { x: best[0], y: best[1] };
+      showRead(`x = ${E.fmtNum(best[0])}   y ≈ ${E.fmtNum(best[1])}`);
     } else {
       const { fx, fy, t0, t1 } = paramFns();
       if (!fx) return;
@@ -340,8 +388,8 @@
     tabsEl.querySelectorAll("[data-m]").forEach(x => x.setAttribute("aria-selected", String(x === b)));
     $("#gParam").hidden = store.mode !== "param";
     $("#gPolar").hidden = store.mode !== "polar";
-    $("#gAnalysis").hidden = store.mode === "table" || store.mode === "polar" && false;
-    $("#gAnalysis").hidden = store.mode === "table";
+    $("#gOde").hidden = store.mode !== "ode";
+    $("#gAnalysis").hidden = store.mode === "table" || store.mode === "ode";
     $("#gTableWrap").hidden = store.mode !== "table";
     renderFns(); draw(); scheduleTable();
     if (store.mode === "table") buildTable();
@@ -365,6 +413,11 @@
     m2.forEach(([id, k]) => {
       const el = $(id); el.value = store.polar[k];
       el.oninput = () => { store.polar[k] = el.value; save(); draw(); };
+    });
+    const m3 = [["#gOF", "f"], ["#gOX0", "x0"], ["#gOY0", "y0"], ["#gOX1", "x1"]];
+    m3.forEach(([id, k]) => {
+      const el = $(id); el.value = store.ode[k];
+      el.oninput = () => { store.ode[k] = el.value; save(); draw(); };
     });
   }
 

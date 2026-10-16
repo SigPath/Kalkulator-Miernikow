@@ -24,15 +24,15 @@
   const FN2 = ["atan2","gcd","lcm","mod","nthroot","max","min","pow","det","inv","transpose","rank","ncr","npr"];
   // komendy CAS (pierwszy token wyrażenia)
   const COMMANDS = ["solve","nsolve","diff","integrate","int","limit","sum","prod","product",
-                    "expand","factor","simplify","taylor","series"];
+                    "expand","factor","simplify","taylor","series","odesolve"];
   // stałe / słowa zarezerwowane
   const CONSTS = ["pi","e","i","inf","infinity","true","false","ans","deg"];
   const KNOWN = new Set([...FN1, ...FN2, ...COMMANDS, ...CONSTS]);
 
-  // funkcje, dla których `,` wewnątrz nawiasów jest zdecydowanie separarem argumentów
-  // (a nie przecinkiem dziesiętnym)
+  // funkcje, dla których `,` wewnątrz nawiasów jest zdecydowanie przecinkiem dziesiętnym
+  // (log/log10 NIE — log(x, b) przyjmuje opcjonalną podstawę)
   const SINGLE_ARG = new Set(["sin","cos","tan","asin","acos","atan","arcsin","arccos","arctan",
-                              "sinh","cosh","tanh","asinh","acosh","atanh","ln","log","log10","log2",
+                              "sinh","cosh","tanh","asinh","acosh","atanh","ln","log10","log2",
                               "exp","sqrt","cbrt","abs","floor","ceil","round","sign","conj","re",
                               "im","arg","factorial","ans"]);
 
@@ -135,44 +135,39 @@
     return out;
   }
 
-  // zamienia `,` na `.` wewnątrz nawiasów funkcji jednoargumentowych oraz między cyframi,
-  // gdy wyrażenie nie zawiera funkcji ani macierzy (polski przecinek dziesiętny)
+  // rozstrzyga `,`: przecinek dziesiętny czy separator argumentów — reguła deterministyczna:
+  // • głębia 0 (poza nawiasami) → zawsze dziesiętny (separatory występują tylko w nawiasach)
+  // • wewnątrz `(` funkcji jednoargumentowej (znanej lub użytkownika z 1 parametrem) → dziesiętny
+  // • wewnątrz `(` funkcji wieloargumentowej/komendy → separator
+  // • wewnątrz zwykłego nawiasu grupującego → dziesiętny
+  // • wewnątrz `[ ]` (macierz/wektor) → separator
   function fixCommas(tokens) {
-    const hasStructure = tokens.some(t =>
-      t.t === "id" && KNOWN.has(t.v) && t.v !== "pi" && t.v !== "e" && t.v !== "i" || t.v === "[");
-    if (!hasStructure) {
-      return tokens.map(t => {
-        if (t.t === "num" && t.v.includes(",")) return { t: "num", v: t.v.replace(",", ".") };
-        if (t.t === ",") return { t: ".", v: "." };
-        return t;
-      });
-    }
-    // są funkcje/nawiasy kwadratowe: `,` to separator; `.` tylko w arg. funkcji jednoarg.
     const out = [];
-    const frames = [];       // konteksty otwartych nawiasów
-    let expectFnParen = false; // poprzedni token to jednoarg. funkcja bez nawiasu
+    const stack = [];          // konteksty otwartych nawiasów: { dot: bool }
+    let pendingFn = null;      // nazwa funkcji oczekującej na `(` (id bezpośrednio przed nawiasem)
     for (const tok of tokens) {
-      if (tok.t === "id" && SINGLE_ARG.has(tok.v)) {
-        expectFnParen = true;
+      if (tok.t === "id") {
+        pendingFn = tok.v;
         out.push(tok);
         continue;
       }
       if (tok.v === "(") {
-        frames.push({ dot: expectFnParen });
-        expectFnParen = false;
+        let dot = !pendingFn;
+        if (pendingFn) {
+          if (SINGLE_ARG.has(pendingFn)) dot = true;
+          else if (scope.fns[pendingFn] && scope.fns[pendingFn].params.length === 1) dot = true;
+        }
+        stack.push({ dot });
+        pendingFn = null;
         out.push(tok);
         continue;
       }
-      if (tok.v === ")") {
-        frames.pop();
-        expectFnParen = false;
-        out.push(tok);
-        continue;
-      }
-      expectFnParen = false;
+      if (tok.v === "[") { stack.push({ dot: false }); pendingFn = null; out.push(tok); continue; }
+      if (tok.v === ")" || tok.v === "]") { stack.pop(); pendingFn = null; out.push(tok); continue; }
+      pendingFn = null;
       if (tok.t === ",") {
-        const top = frames[frames.length - 1];
-        out.push(top && top.dot ? { t: ".", v: "." } : tok);
+        const top = stack[stack.length - 1];
+        out.push(!stack.length || (top && top.dot) ? { t: ".", v: "." } : tok);
         continue;
       }
       if (tok.t === "num" && tok.v.includes(",")) { out.push({ t: "num", v: tok.v.replace(",", ".") }); continue; }
@@ -194,13 +189,14 @@
 
   /* ============================== Narzędzia tekstowe ============================== */
 
-  // dzieli łańcuch po przecinkach najwyższego poziomu (uwzględnia nawiasy i [])
-  function splitTop(s) {
+  // dzieli łańcuch po danym separatorze najwyższego poziomu (uwzględnia nawiasy i [])
+  function splitTop(s, sep) {
+    sep = sep || ",";
     const parts = []; let depth = 0, cur = "";
     for (const ch of s) {
       if (ch === "(" || ch === "[") depth++;
       if (ch === ")" || ch === "]") depth--;
-      if (ch === "," && depth === 0) { parts.push(cur.trim()); cur = ""; }
+      if (ch === sep && depth === 0) { parts.push(cur.trim()); cur = ""; }
       else cur += ch;
     }
     if (cur.trim() !== "" || parts.length) parts.push(cur.trim());
@@ -413,6 +409,27 @@
     };
   }
 
+  // kompilacja wyrażenia dwóch zmiennych (np. prawa strona y' = f(x, y))
+  function compile2(expr, varX, varY) {
+    const code = toMathJS(expr);
+    let f;
+    try { f = math.compile(code); }
+    catch (e) { throw new Error("Nie udało się skompilować wyrażenia: " + e.message); }
+    const fnsScope = {};
+    for (const [name, fn] of Object.entries(scope.fns)) fnsScope[name] = fn.fn || fn.compiled;
+    const scopeObj = Object.assign({}, scope.vars, fnsScope);
+    return function (x, y) {
+      try {
+        scopeObj[varX] = x;
+        scopeObj[varY] = y;
+        const v = f.evaluate(scopeObj);
+        if (typeof v === "number") return v;
+        if (isComplex(v)) return v.im === 0 ? v.re : NaN;
+        return NaN;
+      } catch (e) { return NaN; }
+    };
+  }
+
   /* ============================== Narzędzia numeryczne ============================== */
 
   const EPS = 1e-12;
@@ -501,6 +518,33 @@
     let s = f(a) + f(b);
     for (let k = 1; k < n; k++) s += f(a + k * h) * (k % 2 ? 4 : 2);
     return s * h / 3;
+  }
+
+  /* -------- równania różniczkowe y' = f(x, y): metoda Rungego-Kotty 4. rzędu -------- */
+
+  // całkuje od x0 w kierunku x1 (x1 < x0 → kroki wstecz); zwraca punkty [[x, y], ...]
+  function odeRK4(f, x0, y0, x1, steps) {
+    const n = Math.max(8, Math.min(steps || 800, 4000));
+    const h = (x1 - x0) / n;
+    const pts = [[x0, y0]];
+    let x = x0, y = y0;
+    for (let k = 0; k < n; k++) {
+      const k1 = f(x, y);
+      const k2 = f(x + h / 2, y + h / 2 * k1);
+      const k3 = f(x + h / 2, y + h / 2 * k2);
+      const k4 = f(x + h, y + h * k3);
+      y = y + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4);
+      x = x + h;
+      if (!isFinite(y) || Math.abs(y) > 1e12) { pts.push([x, NaN]); break; }
+      pts.push([x, y]);
+    }
+    return pts;
+  }
+
+  // rozwiązanie przez punkt (x0, y0) w obu kierunkach — pełna krzywa na widoku
+  function odeSolve(fExpr, varX, varY, x0, y0, xEnd) {
+    const f = compile2(fExpr, varX, varY);
+    return odeRK4(f, x0, y0, xEnd, 800);
   }
 
   /* ============================== Komendy CAS ============================== */
@@ -673,7 +717,101 @@
     return null;
   }
 
-  /* -------- nierówności: analiza przedziałów numeryczna z dokładnymi krańcami -------- */
+  /* -------- macierze symboliczne: det i odwrotna na wyrażeniach nerdamera -------- */
+
+  // "[a,b;c,d]" → [["a","b"],["c","d"]]
+  function parseMatrixCells(s) {
+    const body = String(s).trim().replace(/^\[/, "").replace(/\]$/, "").trim();
+    const rows = splitTop(body, ";").filter(Boolean);
+    const m = rows.map(r => splitTop(r, ","));
+    if (!m.length || m.some(r => r.length !== m[0].length || r.some(c => !c))) {
+      throw casError("Zapis macierzy: [wiersz1; wiersz2] z kolumnami po przecinku, np. [a,b;c,d].");
+    }
+    return m;
+  }
+
+  function sdet(m) {
+    if (m.length !== m[0].length) throw casError("Wyznacznik tylko dla macierzy kwadratowych.");
+    if (m.length > 4) throw casError("Symboliczny wyznacznik do rozmiaru 4×4 (większe policz numerycznie).");
+    if (m.length === 1) return m[0][0];
+    if (m.length === 2) return nerdamer(`(${m[0][0]})*(${m[1][1]})-(${m[0][1]})*(${m[1][0]})`).simplify().text();
+    let acc = "0";
+    for (let j = 0; j < m.length; j++) {
+      const minor = m.slice(1).map(row => row.filter((_, c) => c !== j));
+      const sign = j % 2 ? "-" : "";
+      acc = nerdamer(`(${acc})+(${sign}(${m[0][j]}))*(${sdet(minor)})`).simplify().text();
+    }
+    return acc;
+  }
+
+  // odwrotność metodą Gaussa-Jordana na wyrażeniach (dokładne ułamki, także symbole)
+  function sinv(m) {
+    const n = m.length;
+    if (n !== m[0].length) throw casError("Macierz odwrotna tylko dla macierzy kwadratowych.");
+    if (n > 4) throw casError("Symboliczna macierz odwrotna do rozmiaru 4×4 (większą policz numerycznie).");
+    const nd = (s) => nerdamer(String(s));
+    const M = m.map((row, r) => row.map(c => nd(c).text()).concat(row.map((_, c) => (r === c ? "1" : "0"))));
+    for (let col = 0; col < n; col++) {
+      let piv = -1;
+      for (let r = col; r < n; r++) {
+        try { if (nd(M[r][col]).text() !== "0" && nd(M[r][col]).evaluate().text() !== "0") { piv = r; break; } }
+        catch (e) { piv = r; break; }
+      }
+      if (piv === -1) throw casError("det = 0 — macierz osobliwa, nie ma macierzy odwrotnej.");
+      if (piv !== col) { const t = M[piv]; M[piv] = M[col]; M[col] = t; }
+      const pv = M[col][col];
+      for (let c = 0; c < 2 * n; c++) M[col][c] = nd(M[col][c]).divide(pv).simplify().text();
+      for (let r = 0; r < n; r++) {
+        if (r === col) continue;
+        const factor = M[r][col];
+        try { if (nd(factor).text() === "0") continue; } catch (e) {}
+        for (let c = 0; c < 2 * n; c++) {
+          M[r][c] = nd(M[r][c]).subtract(nd(factor).multiply(M[col][c])).simplify().text();
+        }
+      }
+    }
+    return M.map(row => row.slice(n).map(c => c.replace(/\*1\//g, "/")));
+  }
+
+  function matrixCellsToHtml(cells, label) {
+    return `<div class="m-resblock"><div class="m-reslabel">${label}</div>
+      <table class="mtx">${cells.map(row => `<tr>${row.map(c => `<td>${latexToHtml(c)}</td>`).join("")}</tr>`).join("")}</table></div>`;
+  }
+
+  /* -------- nierówności: liniowe symbolicznie, pozostałe numerycznie w oknie -------- */
+
+  // nierówność liniowa a·v + b (op) 0 → dokładny wynik "x (op) krańców"; zwraca null, gdy nieliniowa
+  function solveLinearInequality(L, R, expr, v, op) {
+    try {
+      const e = nerdamer(toNerdamer(expr));
+      const aE = e.diff(v);
+      if (aE.diff(v).text() !== "0") return null;
+      const aNum = numOf(aE.text());
+      if (aNum === null) return null;                    // współczynnik symboliczny → ścieżka numeryczna
+      const bE = e.subst(v, "0");
+      if (Math.abs(aNum) < 1e-15) {
+        const cNum = numOf(bE.text());
+        if (cNum === null) return null;
+        const holds = op === "<" ? cNum < 0 : op === "<=" ? cNum <= 0 : op === ">" ? cNum > 0 : cNum >= 0;
+        return { desc: holds ? "nierówność zawsze prawdziwa (x ∈ ℝ)" : "brak rozwiązań", intervals: [], notes: [], boundary: [] };
+      }
+      const root = nerdamer("((-1)*(" + bE.text() + "))/(" + aE.text() + ")").simplify().text();
+      // przy ujemnym a znak nierówności się odwraca
+      const flipped = { "<": ">", "<=": ">=", ">": "<", ">=": "<=" };
+      const finalOp = aNum < 0 ? flipped[op] : op;
+      const rootNum = numOf(root);
+      const notes = [];
+      if (aNum < 0) notes.push("Współczynnik przy " + v + " jest ujemny — znak nierówności został odwrócony.");
+      if (rootNum !== null && !/^[\-0-9./]+$/.test(root)) notes.push(`${finalOp} ${root}  ≈  ${fmtNum(rootNum)}`);
+      return {
+        desc: `${v} ${finalOp} ${root}`,
+        relational: true,
+        intervals: [],
+        notes,
+        boundary: [{ exact: root, num: rootNum }]
+      };
+    } catch (err) { return null; }
+  }
 
   function solveInequality(ineq, v) {
     const m = ineq.match(/(<=|>=|<|>)/);
@@ -683,6 +821,11 @@
     if (parts.length !== 2) throw casError("Nierówność musi mieć postać: wyrażenie < wyrażenie.");
     const L = parts[0].trim(), R = parts[1].trim();
     const expr = "(" + L + ")-(" + R + ")";
+
+    // nierówność liniowa: rozwiązanie dokładne (symboliczne), bez okna numerycznego
+    const lin = solveLinearInequality(L, R, expr, v, op);
+    if (lin) return lin;
+
     const f = compile(expr, v);
     // okno analizy
     const hasTrig = /sin|cos|tan|sec|csc|cot/.test(expr);
@@ -824,6 +967,32 @@
         return runCommand(cmdMatch[1].toLowerCase(), norm.slice(norm.indexOf("(") + 1, norm.lastIndexOf(")")), result, t0);
       }
 
+      // ---- macierze symboliczne: det([a,b;c,d]) / inv([...]) z niewiadomymi
+      const symM = norm.match(/^(det|inv)\s*\((.*)\)$/);
+      if (symM && symM[2].includes("[")) {
+        const cells = parseMatrixCells(symM[2].trim());
+        // nerdamer nie parsuje literałów macierzowych — symbole wyciągamy z komórek tekstowo
+        const knownWords = new Set(["pi", "e", "i", "ans", ...FN1, ...FN2]);
+        const syms = [...new Set(cells.flat().flatMap(c => String(c).match(/[a-zA-Z_][a-zA-Z0-9_]*/g) || []))]
+          .filter(w => !knownWords.has(w.toLowerCase()) && !(w in scope.vars));
+        if (syms.length) {
+          if (symM[1] === "det") {
+            const d = sdet(cells);
+            result.ok = true; result.kind = "cas";
+            result.exact = d; result.latex = d;
+            result.html = "det = " + latexToHtml(d);
+            const dn = numOf(d);
+            if (dn !== null) result.info.push("dla liczb det ≈ " + fmtNum(dn));
+          } else {
+            const inv = sinv(cells);
+            result.ok = true; result.kind = "cas";
+            result.exact = "macierz odwrotna";
+            result.html = matrixCellsToHtml(inv, "A⁻¹ (symbolicznie)");
+          }
+          return finish(result, t0);
+        }
+      }
+
       // ---- macierze/wektory: mathjs
       if (norm.includes("[")) {
         const v = evaluateNumeric(norm);
@@ -842,7 +1011,7 @@
         result.ok = true; result.kind = "inequality";
         result.desc = sol.desc;
         result.exact = sol.desc;
-        result.html = `<b>${v}</b> ∈ ${sol.desc}`;
+        result.html = sol.relational ? sol.desc : `<b>${v}</b> ∈ ${sol.desc}`;
         sol.notes.forEach(nn => result.info.push(nn));
         return finish(result, t0);
       }
@@ -894,9 +1063,15 @@
         // nerdamer nie zna funkcji użytkownika — taki „dokładny” tekst (np. 10*h) jest mylący
         if (exact && Object.keys(scope.fns).some(n => new RegExp("\\b" + n + "\\b").test(exact))) exact = null;
         const approx = evaluateNumeric(norm);
+        // dziesiętny artefakt nerdamera (np. „5.0” wobec 5) → zostaje samo przybliżenie;
+        // wyniki porządne (14, 1/2, 2^(1/2)) zostają
+        if (exact && typeof approx === "number" && isFinite(approx) && exact.includes(".")) {
+          const ex = numOf(exact);
+          if (ex !== null && Math.abs(ex - approx) <= 1e-12 * Math.max(1, Math.abs(approx))) exact = null;
+        }
         result.ok = true;
         result.kind = isComplex(approx) ? "complex" : "number";
-        result.exact = exact && exact !== fmtNum(typeof approx === "number" ? approx : NaN) ? exact : (exact || null);
+        result.exact = exact;
         result.approx = approx; result.approxText = fmtValue(approx);
         result.latex = exact || null;
         result.html = exact ? latexToHtml(exact) : fmtValue(approx);
@@ -989,7 +1164,7 @@
           result.ok = true; result.kind = "inequality";
           result.desc = sol.desc;
           result.exact = sol.desc;
-          result.html = `<b>${v}</b> ∈ ${sol.desc}`;
+          result.html = sol.relational ? sol.desc : `<b>${v}</b> ∈ ${sol.desc}`;
           sol.notes.forEach(nn => result.info.push(nn));
           return finish(result, t0);
         }
@@ -1170,6 +1345,23 @@
         result.html = `<span class="cas-label">${label}:</span> ` + latexToHtml(exact);
         return finish(result, t0);
       }
+      case "odesolve": {
+        need(4);
+        // odesolve(y' = f(x,y), x0, y0, x1) — krzywa całkowa numerycznie (RK4)
+        const fExpr = args[0].replace(/^y\s*'\s*=?\s*/i, "").replace(/^d\s*y\s*\/\s*d\s*x\s*=\s*/i, "");
+        const x0 = numOf(args[1]), y0 = numOf(args[2]), x1 = numOf(args[3]);
+        if (x0 === null || y0 === null || x1 === null || x0 === x1) {
+          throw casError("Użycie: odesolve(y' = f(x,y), x0, y0, x1) — podaj liczby.");
+        }
+        const pts = odeSolve(fExpr, "x", "y", x0, y0, x1);
+        const last = pts[pts.length - 1];
+        result.ok = true; result.kind = "cas"; result.ode = { pts };
+        result.exact = `y(${fmtNum(last[0])}) ≈ ${fmtNum(last[1])}`;
+        result.html = `y' = ${latexToHtml(fExpr)} &nbsp;·&nbsp; y(${latexToHtml(args[1])}) = ${latexToHtml(args[2])} → ` +
+          `y(${fmtNum(last[0])}) ≈ <b>${fmtNum(last[1])}</b>`;
+        result.info.push("Metoda Rungego-Kotty 4. rzędu (numerycznie). Krzywą narysujesz na WYKRESACH — tryb „y' = f(x,y)”.");
+        return finish(result, t0);
+      }
       case "taylor": case "series": {
         need(4);
         const f = args[0], v = args[1], at = args[2], n = Math.min(parseInt(args[3], 10) || 4, 10);
@@ -1206,12 +1398,13 @@
   /* ============================== API publiczne ============================== */
 
   return {
-    version: "1.0.0",
+    version: "1.1.0",
     settings, scope,
     normalize, previewHtml, evaluate, latexToHtml,
-    compile, fmtNum, fmtValue, isComplex,
-    findRoots, findExtrema, numericLimit, simpson, bisect, deriv,
+    compile, compile2, fmtNum, fmtValue, isComplex,
+    findRoots, findExtrema, numericLimit, simpson, bisect, deriv, odeRK4, odeSolve,
     solveEquation, solveInequality, numOf, detectVars,
+    sdet, sinv, parseMatrixCells,
     get lastAns() { return lastAns; },
     setAns(value, text) { lastAns = { value: typeof value === "number" ? value : 0, text: text || String(value) }; },
     setDeg(d) { settings.deg = !!d; applyAngleMode(); },

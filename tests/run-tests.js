@@ -124,7 +124,11 @@ function approx(a, b, tol) { return Math.abs(a - b) <= (tol || 1e-9); }
   let r = evalText("solve(x^2-4<0,x)");
   check("ineq quad", r.ok && r.desc.includes("-2") && r.desc.includes("2") && r.desc.startsWith("(") && r.desc.endsWith(")"), JSON.stringify(r.desc));
   r = evalText("2*x+3>=5");
-  check("ineq linear", r.ok && r.desc.includes("1") && r.desc.includes("["), JSON.stringify(r.desc));
+  check("ineq linear exact", r.ok && r.desc === "x >= 1", JSON.stringify(r.desc));
+  r = evalText("5-2*x<1");
+  check("ineq linear flip", r.ok && r.desc === "x > 2", JSON.stringify(r.desc));
+  r = evalText("3*x>2");
+  check("ineq linear fraction", r.ok && r.desc === "x > 2/3", JSON.stringify(r.desc));
   r = evalText("solve(x^2-9>0,x)");
   check("ineq strict excluded", r.ok && r.desc.includes("(-100, -3)") && r.desc.includes("(3, 100)"), JSON.stringify(r.desc));
   r = evalText("solve(sin(x)>0,x)");
@@ -205,7 +209,7 @@ function approx(a, b, tol) { return Math.abs(a - b) <= (tol || 1e-9); }
   Engine.resetScope();
 }
 
-/* ---------------- macierze (mathjs) ---------------- */
+/* ---------------- macierze (mathjs + symboliczne + zespolone) ---------------- */
 {
   let r = evalText("det([1,2;3,4])");
   check("matrix det", r.ok && approx(r.approx, -2, 1e-12), JSON.stringify(r));
@@ -213,6 +217,42 @@ function approx(a, b, tol) { return Math.abs(a - b) <= (tol || 1e-9); }
   check("matrix mul", r.ok && r.approxText.includes("17"), r.approxText);
   r = evalText("inv([4,7;2,6])");
   check("matrix inv", r.ok && r.approxText.includes("0.6"), r.approxText);
+  r = evalText("det([a,b;c,d])");
+  check("sdet 2x2", r.ok && r.exact === "a*d-b*c", JSON.stringify(r.exact));
+  r = evalText("det([x,1;1,x])");
+  check("sdet x", r.ok && r.exact.includes("x") && r.exact.includes("-1") || r.exact.includes("1+x"), r.exact);
+  r = evalText("inv([a,1;1,a])");
+  check("sinv", r.ok && r.html.includes("mtx") && r.html.includes("a"), r.html.slice(0, 80));
+  // zespolone przez mathjs
+  r = evalText("det([1+i,2;3,4-i])");
+  check("det complex", r.ok && r.approxText.includes("i"), r.approxText);
+}
+
+/* ---------------- przecinek dziesiętny (deterministyczny) ---------------- */
+{
+  check("comma plain", Engine.normalize("1,5+2") === "1.5+2", Engine.normalize("1,5+2"));
+  check("comma in fn", Engine.normalize("sin(1,5)") === "sin(1.5)", Engine.normalize("sin(1,5)"));
+  check("comma in group", Engine.normalize("(1,5)+2") === "(1.5)+2", Engine.normalize("(1,5)+2"));
+  check("comma max sep", Engine.normalize("max(1,5)") === "max(1,5)", Engine.normalize("max(1,5)"));
+  check("comma log base", Engine.normalize("log(8,2)") === "log(8,2)", Engine.normalize("log(8,2)"));
+  check("comma mixed", Engine.normalize("2,5+sin(1,5)") === "2.5+sin(1.5)", Engine.normalize("2,5+sin(1,5)"));
+  const r = evalText("max(2,5)");
+  check("comma max value", r.ok && r.approx === 5, JSON.stringify({ a: r.approx, e: r.error }));
+  const r2 = evalText("2,5*2");
+  check("comma decimal value", r2.ok && approx(r2.approx, 5, 1e-12), JSON.stringify({ a: r2.approx, e: r2.error }));
+}
+
+/* ---------------- równania różniczkowe (RK4) ---------------- */
+{
+  let pts = Engine.odeSolve("y", "x", "y", 0, 1, 1);
+  let y1 = pts[pts.length - 1][1];
+  check("ode y'=y", approx(y1, Math.E, 1e-8), y1);
+  pts = Engine.odeSolve("-2*y", "x", "y", 0, 1, 1);
+  check("ode y'=-2y", approx(pts[pts.length - 1][1], Math.exp(-2), 1e-8), pts[pts.length - 1][1]);
+  pts = Engine.odeSolve("x", "x", "y", 0, 0, 1);
+  check("ode y'=x", approx(pts[pts.length - 1][1], 0.5, 1e-8), pts[pts.length - 1][1]);
+  const r = evalText("odesolve(y'=-2*y, 0, 1, 2)");
+  check("odesolve cmd", r.ok && r.exact.includes("0.0183"), JSON.stringify({ e: r.exact, err: r.error }));
 }
 
 /* ---------------- formatowanie ---------------- */

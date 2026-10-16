@@ -50,14 +50,22 @@ przez wątek główny i workera.
 | `sum(f, k, a, b)` / `prod(...)` | sumy i iloczyny (dokładne do 2000 wyrazów) |
 | `expand / factor / simplify` | przekształcenia wyrażeń |
 | `taylor(f, x, a, n)` | wielomian Taylora |
+| `odesolve(y' = f(x,y), x0, y0, x1)` | równanie różniczkowe 1. rzędu — numerycznie (RK4) |
+| `det([a,b;c,d])`, `inv([a,b;c,d])` | macierze symboliczne (do 4×4, dokładne ułamki i symbole) |
 | `gcd, lcm, mod, combinations, permutations, factorial` | teoria liczb, kombinatoryka |
 
 Równania trygonometryczne zwracają rozwiązania parametryczne (n ∈ ℤ).
-Nierówności trygonometryczne analizowane w oknie [−3π, 3π] z notką o okresowości.
+Nierówności liniowe rozwiązane symbolicznie (np. `x > 2/3` z odwróceniem znaku przy ujemnym
+współczynniku); pozostałe analizowane w oknie [−100, 100] lub [−3π, 3π] z notką o okresowości.
+Przecinek dziesiętny działa deterministycznie: poza nawiasami i wewnątrz nawiasów zwykłych
+oraz funkcji jednoargumentowych jest przecinkiem dziesiętnym; w funkcjach wieloargumentowych
+i macierzach — separatorem (`log(x, b)` przyjmuje opcjonalną podstawę).
 
 ## WYKRESY
 
-- y = f(x) (do 6 funkcji), krzywe parametryczne x(t), y(t) i biegunowe r(θ).
+- y = f(x) (do 6 funkcji), krzywe parametryczne x(t), y(t), biegunowe r(θ)
+  oraz **równania różniczkowe** y' = f(x, y) — krzywa całkowa przez warunek
+  początkowy (x₀, y₀), RK4, z punktem warunku i trace po krzywej.
 - Przesuwanie (drag), zoom (kółko / szczypnięcie / przyciski), śledzenie punktu (trace).
 - Analizy: miejsca zerowe, ekstrema (min/max z współrzędnymi), punkty przecięcia,
   całka oznaczona z polem pod krzywą.
@@ -66,8 +74,11 @@ Nierówności trygonometryczne analizowane w oknie [−3π, 3π] z notką o okre
 
 ## MACIERZE
 
-Edytowalne A i B (1×1 … 6×6): A+B, A−B, A·B, det, A⁻¹, Aᵀ, rząd, Aᵏ, układ A·X=B,
-wartości własne i wektory własne (także zespolone). Wektory: a·b, a×b (3D), |a|, kąt.
+Edytowalne A i B (1×1 … 6×6), komórki mogą być **liczbami zespolonymi** (np. `1+2i`)
+i wyrażeniami (`sqrt(2)`, `pi/4`): A+B, A−B, A·B, det, A⁻¹, Aᵀ, rząd (rzeczywiste),
+Aᵏ, układ A·X=B, wartości własne i wektory własne (także zespolone).
+Wektory: a·b, a×b (3D), |a|, kąt (rzeczywiste). Symbole w komórkach → det/inv
+symbolicznie przez KALKULATOR: `det([a,b;c,d])` = a·d−b·c, `inv([a,1;1,a])`.
 
 ## STATYSTYKA
 
@@ -80,15 +91,17 @@ wartości własne i wektory własne (także zespolone). Wektory: a·b, a×b (3D)
 
 ## Ograniczenia względem Casio ClassPad II FX-CP400
 
-- Brak równań różniczkowych, macierzy symbolicznych i zespolonych w CAS (nerdamer liczbowe).
-- Nierówności: analiza numeryczna w oknie (±100 lub ±3π), nie pełna analiza symboliczna.
+- Równania różniczkowe: numerycznie (RK4, 1. równanie 1. rzędu z warunkiem początkowym),
+  bez rozwiązań symbolicznych, układów ODE i ODE 2. rzędu.
+- Nierówności nieliniowe: analiza numeryczna w oknie (±100 lub ±3π); liniowe — dokładne.
+- Macierze symboliczne: det i odwrotna do 4×4; brak symbolicznych wartości własnych.
 - Rysowanie 2D (bez 3D Graph, geometrii, arkusza kalkulacyjnego, eActivity).
 - Zapis wejścia liniowy z podglądem (bez edycji 2D „na miejscu").
-- Ułamki dziesiętne wpisujemy z kropką (przecinek konwertowany heurystycznie poza funkcjami).
 
 ## Testy
 
 ```
-node tests/run-tests.js   # 81 testów: arytmetyka dokładna, CAS, układy, nierówności,
-                          # numeryka, DEG/RAD, zespolone, macierze, formatowanie, błędy
+node tests/run-tests.js   # 99 testów: arytmetyka dokładna, CAS, układy, nierówności,
+                          # ODE (RK4), macierze symboliczne i zespolone, przecinek,
+                          # numeryka, DEG/RAD, formatowanie, błędy
 ```
