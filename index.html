@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Kalkulator Mierników</title>
+<meta name="description" content="Kalkulator mierników i obwodów: amperomierz i woltomierz, niepewności pomiarowe, systemy liczbowe, II prawo Kirchhoffa, układy równań i prądy gałęzi, kalkulator naukowy z CAS, wykresy, macierze i statystyka.">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b5fff">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -35,8 +36,8 @@ td.out{font-variant-numeric:tabular-nums;text-align:right;font-weight:600;backgr
 th:last-child{text-align:right}
 .avg{display:flex;justify-content:space-between;margin-top:10px;padding:12px;border-radius:10px;background:var(--out);font-weight:700}
 button{margin-top:10px;font:inherit;font-size:14px;color:var(--acc);background:none;border:0;padding:6px 0}
-.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;margin-bottom:16px;background:var(--line);border-radius:12px}
-.tabs button{margin:0;padding:10px 0;font-weight:600;font-size:12.5px;color:var(--mut);border-radius:9px}
+.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:4px;margin-bottom:16px;background:var(--line);border-radius:12px}
+.tabs button{margin:0;padding:10px 2px;font-weight:600;font-size:12px;line-height:1.15;color:var(--mut);border-radius:9px;overflow-wrap:anywhere}
 .tabs button[aria-selected=true]{background:var(--card);color:var(--acc);box-shadow:0 1px 3px rgba(0,0,0,.15)}
 .card[hidden]{display:none}
 .hint{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--out);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:14px}
@@ -54,6 +55,51 @@ td.rel{font-size:13px;font-weight:500;padding:9px 6px;white-space:nowrap}
 .all{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font:14px ui-monospace,Menlo,monospace}
 .all b{color:var(--mut);font-weight:500}
 .sw{display:flex;justify-content:flex-end}
+.el{position:relative;border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
+.ehead{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px;padding-right:32px}
+.ehead select{flex:1 1 0;min-width:0;width:auto;font-size:12.5px;padding:6px 4px}
+.ehead select[data-f=sign]{flex:0 0 42px}
+.ehead .del{position:absolute;top:9px;right:8px;margin:0;padding:3px 5px;font-size:12px;line-height:1;color:var(--mut)}
+.ebody{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:8px}
+.ebody[hidden]{display:none}
+.kv{font-variant-numeric:tabular-nums;font-weight:600;font-size:17px;background:var(--out);border-radius:9px;padding:9px 10px;overflow-wrap:anywhere}
+.kbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.kbtns button{margin:0;padding:8px 12px;border:1px solid var(--line);border-radius:9px;font-weight:600}
+details.kn{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:0 0 12px;font-size:14px}
+details.kn summary{color:var(--acc);font-weight:600;cursor:pointer}
+details.kn p{margin:8px 0 4px;color:var(--mut);font-size:13.5px}
+details.kn ul{margin:4px 0;padding-left:18px;color:var(--mut);font-size:13.5px}
+details.kn li{margin-bottom:4px}
+.warn{color:#b54708;font-size:13.5px;margin:6px 0}
+@media(prefers-color-scheme:dark){.warn{color:#fdb022}}
+.mx{display:grid;gap:6px;align-items:center;margin-bottom:12px}
+.mx input{font-size:15px;padding:7px 4px;text-align:center;font-variant-numeric:tabular-nums}
+.mx .ml{font-size:12px;color:var(--mut)}
+.mx .me{font-size:15px;color:var(--mut);text-align:center}
+.mx .nm{background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;color:var(--acc);font-weight:700;font-size:14px;padding:2px 0}
+.mx .rhs{background:var(--out)}
+.ln.pre{white-space:pre-wrap}
+.sch{width:100%;height:auto;display:block;margin:2px 0 12px}
+.sch .wire{stroke:var(--fg);stroke-width:1.5;fill:none}
+.sch .comp{fill:var(--card);stroke:var(--acc);stroke-width:1.6}
+.sch .src{fill:var(--acc)}
+.sch .sarr{stroke:#fff;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.sch .lbl{fill:var(--fg);font-size:9px;font-family:inherit}
+.sch .val{fill:var(--mut);font-size:8.5px;font-family:inherit}
+.sch .cur{fill:var(--acc);font-size:9px;font-weight:700;font-family:inherit}
+.sch .node{fill:var(--fg)}
+.br{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
+.brh{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.brh .bn{width:56px;text-align:center;font-weight:700;color:var(--acc);font-size:14px;padding:6px 4px}
+.brh .dirt{margin:0;padding:6px 9px;border:1px solid var(--line);border-radius:9px;font-size:12px;color:var(--acc);font-weight:600}
+.brh .del{margin:0;margin-left:auto;padding:4px 7px;font-size:12px;color:var(--mut)}
+.brs{font-size:12px;color:var(--mut);margin:6px 0 8px;font-variant-numeric:tabular-nums}
+.elr{display:grid;grid-template-columns:52px minmax(0,1fr) 26px 30px 22px;gap:6px;align-items:center;margin-bottom:6px}
+.elr select,.elr input{font-size:14px;padding:6px 4px;width:100%}
+.elr input{text-align:center}
+.elr .u{font-size:12px;color:var(--mut);text-align:center}
+.elr .sd{margin:0;padding:5px 0;border:1px solid var(--line);border-radius:8px;font-size:13px;font-weight:700;color:var(--acc)}
+.elr .x{margin:0;padding:3px 4px;font-size:12px;color:var(--mut)}
 footer{color:var(--mut);font-size:12px;text-align:center}
 
 /* ====== Kalkulator ClassPad (KALKULATOR / WYKRESY / MACIERZE / STATYSTYKA) ====== */
@@ -161,7 +207,7 @@ sup,sub{font-size:.72em}
 <div class="hint" id="inst" hidden><span>Zainstaluj aplikację na tym urządzeniu.</span><button type="button" id="instgo" class="go">Zainstaluj</button></div>
 <div class="tabs" id="tabs" role="tablist"></div>
 <div id="app"></div>
-<footer>Mierniki: wartość = (α ÷ α maks.) × zakres · Δ = klasa × zakres ÷ 100 · δ = Δ ÷ wartość</footer>
+<footer>Mierniki: wartość = (α ÷ α maks.) × zakres · Δ = klasa × zakres ÷ 100 · δ = Δ ÷ wartość<br>II prawo Kirchhoffa: ∑E = ∑I·R<br>Układ równań (Cramer): x = Wx ÷ W</footer>
 </main>
 <script src="vendor/math.min.js"></script>
 <script src="vendor/nerdamer.all.min.js"></script>
@@ -184,30 +230,33 @@ METERS.forEach(m=>{state[m.id]=state[m.id]||{range:m.range,max:m.max,unit:m.unit
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}};
 const num=s=>{const n=parseFloat(String(s).replace(",","."));return isFinite(n)?n:null};
 const fmt=n=>n===null?"–":(Math.round(n*1e6)/1e6).toString().replace(".",",");
+const fv=n=>fmt(n).replace(/^-/,"−");
+const escA=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const valV=s=>typeof s==="number"?fv(s):escA(s);
 const app=document.getElementById("app"),tabs=document.getElementById("tabs");
 const cards={};
-const ALL=[...METERS,{id:"n",title:"SYSTEMY"},...(window.EXTRA_TABS||[])];
+const ALL=[...METERS,{id:"n",title:"SYSTEMY"},{id:"k",title:"II PRAWO KIRCHHOFFA",tab:"II KIRCHHOFFA"},{id:"r",title:"UKŁAD RÓWNAŃ"},{id:"o",title:"OBWÓD",tab:"OBWÓD"},...(window.EXTRA_TABS||[])];
 function show(id){
  state.tab=id;
  ALL.forEach(m=>{cards[m.id].hidden=m.id!==id;tabs.querySelector(`[data-t=${m.id}]`).setAttribute("aria-selected",m.id===id)});
  save();
 }
-ALL.forEach(m=>{const b=document.createElement("button");b.type="button";b.dataset.t=m.id;b.setAttribute("role","tab");b.textContent=m.title;b.onclick=()=>show(m.id);tabs.appendChild(b)});
+ALL.forEach(m=>{const b=document.createElement("button");b.type="button";b.dataset.t=m.id;b.setAttribute("role","tab");b.textContent=m.tab||m.title;b.onclick=()=>show(m.id);tabs.appendChild(b)});
 ALL.forEach(m=>{if(m.card){cards[m.id]=m.card;app.appendChild(m.card)}});
 METERS.forEach(m=>{
  const s=state[m.id], u=()=>s.unit;
  const card=document.createElement("section");card.className="card";
  card.innerHTML=`<h2>${m.title}</h2>
  <div class="row">
-  <div><label>Max zakres przyrządu</label><input data-k=range inputmode=decimal value="${s.range}"></div>
+  <div><label>Max zakres przyrządu</label><input data-k=range inputmode=decimal value="${valV(s.range)}"></div>
   <div><label>Jednostka</label><select data-k=unit>${m.units.map(x=>`<option${x==s.unit?" selected":""}>${x}</option>`).join("")}</select></div>
-  <div><label>Działki maks. (skala)</label><input data-k=max inputmode=decimal value="${s.max}"></div>
-  <div><label>Klasa dokładności</label><input data-k=cls inputmode=decimal value="${s.cls}"></div>
+  <div><label>Działki maks. (skala)</label><input data-k=max inputmode=decimal value="${valV(s.max)}"></div>
+  <div><label>Klasa dokładności</label><input data-k=cls inputmode=decimal value="${valV(s.cls)}"></div>
   <div><label>Stała C</label><input data-c readonly></div>
   <div><label>Błąd bezwzgl. Δ (±)</label><input data-d readonly></div>
  </div>
  <table><thead><tr><th>Lp</th><th>α [dz]</th><th>${m.label}</th><th>δ</th></tr></thead><tbody>
- ${s.alfa.map((a,i)=>`<tr><td>${i+1}</td><td><input data-i=${i} inputmode=decimal placeholder="dz" value="${a}"></td><td class=out></td><td class="out rel"></td></tr>`).join("")}
+ ${s.alfa.map((a,i)=>`<tr><td>${i+1}</td><td><input data-i=${i} inputmode=decimal placeholder="dz" value="${escA(a)}"></td><td class=out></td><td class="out rel"></td></tr>`).join("")}
  </tbody></table>
  <div class=avg><span>średnia:</span><span data-avg></span></div>
  <div class=sub data-avgrel></div>
@@ -248,7 +297,7 @@ METERS.forEach(m=>{
  const ns=state.n=state.n||{};ns.val=ns.val||"";ns.from=ns.from||10;ns.to=ns.to||2;
  const opt=(sel)=>Object.keys(BN).map(b=>`<option value=${b}${+b===+sel?" selected":""}>${BN[b]}</option>`).join("");
  sec.innerHTML=`<h2>KALKULATOR SYSTEMÓW</h2>
- <div class="row"><div style="grid-column:1/-1"><label>Liczba</label><input id=nv autocapitalize=characters autocomplete=off autocorrect=off spellcheck=false value="${ns.val}" placeholder="np. 255"></div>
+ <div class="row"><div style="grid-column:1/-1"><label>Liczba</label><input id=nv autocapitalize=characters autocomplete=off autocorrect=off spellcheck=false value="${escA(ns.val)}" placeholder="np. 255"></div>
  <div><label>Z systemu</label><select id=nf>${opt(ns.from)}</select></div>
  <div><label>Na system</label><select id=nt>${opt(ns.to)}</select></div></div>
  <div class=sw><button type=button id=nsw>⇄ Zamień systemy</button></div>
@@ -315,6 +364,532 @@ METERS.forEach(m=>{
   document.getElementById("nv").value=ns.val;document.getElementById("nf").value=ns.from;document.getElementById("nt").value=ns.to;render();
  };
  render();
+})();
+/* ---------- II PRAWO KIRCHHOFFA (napięciowe) ---------- */
+(function(){
+ const sec=document.createElement("section");sec.className="card";
+ const st=state.k=state.k||{};
+ const NEWROW=kind=>({kind:kind||"E",sign:1,unk:"",e:"",i:"",r:""});
+ const RESET=()=>{st.rows=[NEWROW("E"),NEWROW("U")]};
+ if(!Array.isArray(st.rows)||!st.rows.length)RESET();
+ st.rows=st.rows.filter(r=>r&&typeof r==="object").map(r=>({kind:r.kind,sign:r.sign,unk:r.unk,e:r.e,i:r.i,r:r.r}));
+ if(!st.rows.length)RESET();
+ st.rows.forEach(r=>{
+  r.kind=r.kind==="U"?"U":"E";
+  r.sign=r.sign===-1?-1:1;
+  ["e","i","r"].forEach(k=>{r[k]=r[k]==null?"":String(r[k])});
+  if(!(r.kind==="E"?"e":"ir").includes(r.unk))r.unk="";
+ });
+ sec.innerHTML=`<h2>II PRAWO KIRCHHOFFA</h2>
+ <p class="c">W dowolnym oczku obwodu suma algebraiczna sił elektromotorycznych równa się sumie spadków napięć: <b>∑E = ∑I·R</b>. Podawaj wartości w jednostkach podstawowych: V, A, Ω.</p>
+ <details class="kn"><summary>Jak ustalić znaki i co można obliczyć?</summary>
+  <p>Obiegamy oczko w wybranym kierunku (np. zgodnie z ruchem wskazówek zegara) i porównujemy go z kierunkiem prądu i SEM:</p>
+  <ul>
+   <li><b>SEM E</b> — znak „+”, gdy przechodzimy przez źródło od bieguna „−” do „+”, czyli SEM działa zgodnie z obiegiem; znak „−” w przeciwnym wypadku.</li>
+   <li><b>Spadek I·R</b> — znak „+”, gdy prąd płynie zgodnie z kierunkiem obiegu; znak „−”, gdy płynie przeciwnie.</li>
+  </ul>
+  <p>Przy wielkości, którą chcesz obliczyć, wybierz <b>szukane</b> i zostaw jej pole puste — program rozwiąże równanie. Wiersze bez żadnych danych są pomijane.</p>
+ </details>
+ <div id="klist"></div>
+ <div class="kbtns">
+  <button type="button" id="kaddE">+ SEM (E)</button>
+  <button type="button" id="kaddU">+ Spadek (I·R)</button>
+  <button type="button" id="kclr">Wyczyść</button>
+ </div>
+ <div id="kout"></div>`;
+ app.appendChild(sec);cards.k=sec;
+ const list=sec.querySelector("#klist"), kout=sec.querySelector("#kout");
+ const KOPT=[["E","SEM E"],["U","Spadek I·R"]];
+ const SOPT=[[1,"+"],[-1,"−"]];
+ const UOPT=[["","dane"],["e","szukane E"]], VOPT=[["","dane"],["i","szukane I"],["r","szukane R"]];
+ const opts=(a,v)=>a.map(([x,t])=>`<option value="${x}"${String(v)===String(x)?" selected":""}>${t}</option>`).join("");
+ function build(){
+  list.innerHTML="";
+  st.rows.forEach((row,idx)=>{
+   const el=document.createElement("div");el.className="el";
+   el.innerHTML=`<div class="ehead">
+    <select data-f="kind" aria-label="Rodzaj elementu">${opts(KOPT,row.kind)}</select>
+    <select data-f="sign" aria-label="Znak w równaniu">${opts(SOPT,row.sign)}</select>
+    <select data-f="unk" aria-label="Szukana wielkość">${opts(row.kind==="E"?UOPT:VOPT,row.unk)}</select>
+    <button type="button" class="del" data-f="del" aria-label="Usuń element">✕</button>
+   </div>
+   <div class="ebody" data-b="E"${row.kind==="E"?"":" hidden"}>
+    <div><label>E [V]</label><input data-f="e" inputmode="decimal" placeholder="V" value="${escA(row.e)}"></div>
+   </div>
+   <div class="ebody" data-b="U"${row.kind==="U"?"":" hidden"}>
+    <div><label>I [A]</label><input data-f="i" inputmode="decimal" placeholder="A" value="${escA(row.i)}"></div>
+    <div><label>R [Ω]</label><input data-f="r" inputmode="decimal" placeholder="Ω" value="${escA(row.r)}"></div>
+    <div><label>U = I·R [V]</label><div class="kv" data-f="uv">–</div></div>
+   </div>`;
+   el.addEventListener("input",e=>{
+    const f=e.target.dataset.f;
+    if(f==="e"||f==="i"||f==="r"){row[f]=e.target.value;calc()}
+   });
+   el.querySelector('[data-f="kind"]').onchange=e=>{row.kind=e.target.value;row.unk="";build()};
+   el.querySelector('[data-f="sign"]').onchange=e=>{row.sign=e.target.value==="-1"?-1:1;calc()};
+   el.querySelector('[data-f="unk"]').onchange=e=>{row.unk=e.target.value;if(row.unk)row[row.unk]="";build()};
+   el.querySelector('[data-f="del"]').onclick=()=>{st.rows.splice(idx,1);if(!st.rows.length)RESET();build()};
+   list.appendChild(el);
+  });
+  calc();
+ }
+ const L=a=>a.map(x=>`<div class="ln">${x}</div>`).join("");
+ const STP=(t,a,r)=>`<div class="step"><h3>${t}</h3>${L(a)}${r?`<div class="res">${r}</div>`:""}</div>`;
+ const SUB=n=>`<sub>${n}</sub>`;
+ const par=v=>v<0?`(${fv(v)})`:fv(v);
+ const side=(arr,disp)=>arr.map((t,i)=>{const d=disp?disp[i]:t.lbl;return i?(t.sg<0?" − ":" + ")+d:(t.sg<0?"−":"")+d}).join("");
+ const tol=(a,b)=>1e-9*Math.max(1,Math.abs(a),Math.abs(b));
+ function calc(){
+  save();
+  // podgląd U = I·R w każdym wierszu
+  st.rows.forEach((row,idx)=>{
+   if(row.kind!=="U")return;
+   const node=list.children[idx]&&list.children[idx].querySelector('[data-f="uv"]');
+   if(!node)return;
+   const i=num(row.i),r=num(row.r);
+   node.textContent=(i!==null&&r!==null)?`${fv(i*r)} V`:"–";
+  });
+  const bad=[],warn=[];let sumE=0,sumU=0,uE=null,uU=null,nE=0,nU=0,nUnk=0;const tE=[],tU=[];
+  st.rows.forEach((row,idx)=>{
+   const sg=row.sign===-1?-1:1;
+   if(row.kind==="E"){
+    const raw=row.e.trim(),lbl=n=>"E"+SUB(n);
+    if(row.unk==="e"){
+     if(raw)warn.push(`Wiersz ${idx+1}: E oznaczono jako szukane, więc wpisana wartość „${escA(raw)}” jest pomijana.`);
+     nE++;nUnk++;uE={sg,lbl:lbl(nE)};tE.push({sg,lbl:lbl(nE),val:null});return;
+    }
+    if(raw==="")return;
+    const v=num(raw);
+    if(v===null){bad.push(`Wiersz ${idx+1}: „${escA(raw)}” nie jest poprawną liczbą (SEM E).`);return}
+    nE++;sumE+=sg*v;tE.push({sg,lbl:lbl(nE),val:v});
+   }else{
+    const ri=row.i.trim(),rr=row.r.trim();let unk=row.unk;
+    if(!unk){if(ri===""&&rr==="")return;if(ri==="")unk="i";else if(rr==="")unk="r"}
+    const otherSym=unk==="i"?"R":"I",ownSym=unk==="i"?"I":"R";
+    const otherRaw=unk==="i"?rr:ri,ownRaw=unk==="i"?ri:rr;
+    if(row.unk&&ownRaw)warn.push(`Wiersz ${idx+1}: ${ownSym} oznaczono jako szukane, więc wpisana wartość „${escA(ownRaw)}” jest pomijana.`);
+    nU++;const n=nU,lbl=`I${SUB(n)}·R${SUB(n)}`;
+    if(otherRaw===""){bad.push(`Wiersz ${idx+1}: aby obliczyć ${ownSym}, podaj ${otherSym}.`);return}
+    const other=num(otherRaw);
+    if(other===null){bad.push(`Wiersz ${idx+1}: „${escA(otherRaw)}” nie jest poprawną liczbą (${otherSym}).`);return}
+    if(other===0){bad.push(`Wiersz ${idx+1}: ${otherSym} = 0, więc nie można wyznaczyć ${ownSym} (dzielenie przez zero).`);return}
+    if(unk){nUnk++;uU={sg,lbl,n,which:unk,other,ownSym,otherSym};tU.push({sg,lbl,val:null,unk,other,ownSym,otherSym,n});return}
+    const i=num(ri),r=num(rr);
+    if(i===null||r===null)return;
+    sumU+=sg*i*r;tU.push({sg,lbl,val:i*r,i,r});
+   }
+  });
+  let h=bad.map(b=>`<div class="err">${b}</div>`).join("")+warn.map(w=>`<div class="warn">${w}</div>`).join("");
+  if(bad.length){kout.innerHTML=h;return}
+  if(!tE.length&&!tU.length){kout.innerHTML=h+`<div class="c" style="margin-top:14px">Uzupełnij dane elementów oczka, aby zobaczyć równanie i wynik.</div>`;return}
+  let sn=0;const K=()=>`Krok ${++sn}: `;
+  const dE=tE.map(t=>t.val===null?t.lbl:fv(t.val)),dU=tU.map(t=>t.val===null?t.lbl:fv(t.val));
+  h+=STP(K()+"Zapisujemy II prawo Kirchhoffa dla oczka",[
+   "∑E = ∑I·R",
+   `${side(tE)||"0"} = ${side(tU)||"0"}`,
+   `${side(tE,dE)||"0"} = ${side(tU,dU)||"0"}`
+  ]);
+  h+=STP(K()+"Sumujemy siły elektromotoryczne",[
+   ...tE.map(t=>t.val===null?`${t.lbl} = ?`:`${t.sg<0?"−":""}${t.lbl} = ${fv(t.sg*t.val)} V`),
+   `∑E${uE?" (znane)":""} = ${fv(sumE)} V`
+  ],`∑E = ${fv(sumE)} V`);
+  h+=STP(K()+"Sumujemy spadki napięć I·R",[
+   ...tU.map(t=>t.val===null?`${t.lbl} = ?`:`${t.sg<0?"−":""}${t.lbl} = ${t.sg<0?"−":""}(${fv(t.i)} · ${fv(t.r)}) = ${fv(t.sg*t.val)} V`),
+   `∑I·R${uU?" (znane)":""} = ${fv(sumU)} V`
+  ],`∑I·R = ${fv(sumU)} V`);
+  if(nUnk===0){
+   const diff=sumE-sumU,ok=Math.abs(diff)<=tol(sumE,sumU);
+   h+=STP(K()+"Sprawdzamy bilans oczka",[
+    `∑E − ∑I·R = ${fv(sumE)} − ${fv(sumU)} = ${fv(diff)} V`,
+    ok?"Obie strony są równe, więc równanie oczka jest spełnione."
+      :"Obie strony nie są równe. Sprawdź znaki (zgodność z kierunkiem obiegu) oraz wartości elementów."
+   ],ok?`∑E = ∑I·R ✓ równanie spełnione`:`∑E ≠ ∑I·R — różnica ${fv(diff)} V`);
+  }else if(nUnk>1){
+   h+=`<div class="err">Zaznacz tylko jedną szukaną wielkość (albo uzupełnij dane), aby obliczyć wynik.</div>`;
+  }else if(uE){
+   const sg=uE.sg<0?"−1":"+1",rhs=sumU-sumE,val=rhs/uE.sg;
+   h+=STP(K()+`Rozwiązujemy równanie — szukane ${uE.lbl}`,[
+    `∑E(pozostałe) + (${sg})·${uE.lbl} = ∑I·R`,
+    `(${sg})·${uE.lbl} = ${fv(sumU)} − ${par(sumE)}`,
+    `(${sg})·${uE.lbl} = ${fv(rhs)}`,
+    `${uE.lbl} = ${fv(rhs)} ÷ (${sg}) = ${fv(val)}`
+   ],`${uE.lbl} = ${fv(val)} V`)
+   +STP(K()+"Sprawdzamy otrzymany wynik",[
+    `∑E = ${fv(sumE+uE.sg*val)} V`,
+    `∑I·R = ${fv(sumU)} V`
+   ],`∑E = ∑I·R ✓`)
+   +(val<0?`<div class="warn">Wynik ujemny — przy przyjętym kierunku obiegu SEM ma zwrot przeciwny do założonego.</div>`:"");
+  }else{
+   const sg=uU.sg<0?"−1":"+1",rhs=sumE-sumU,prod=uU.sg*uU.other,val=rhs/prod;
+   const own=`${uU.ownSym}${SUB(uU.n)}`,unit=uU.which==="i"?"A":"Ω";
+   const term=uU.which==="i"?`${own}·${fv(uU.other)}`:`${fv(uU.other)}·${own}`;
+   h+=STP(K()+`Rozwiązujemy równanie — szukane ${own}`,[
+    `∑E = ∑I·R(pozostałe) + (${sg})·${uU.lbl}`,
+    `(${sg})·${uU.lbl} = ${fv(sumE)} − ${par(sumU)}`,
+    `(${sg})·${term} = ${fv(rhs)}`,
+    `${own} = ${fv(rhs)} ÷ ((${sg}) · ${fv(uU.other)}) = ${fv(val)}`
+   ],`${own} = ${fv(val)} ${unit}`)
+   +STP(K()+"Sprawdzamy otrzymany wynik",[
+    `∑E = ${fv(sumE)} V`,
+    `∑I·R = ${fv(sumU+prod*val)} V`
+   ],`∑E = ∑I·R ✓`)
+   +(val<0?`<div class="warn">Wynik ujemny — przy przyjętym kierunku obiegu prąd (lub spadek napięcia) ma zwrot przeciwny do założonego.</div>`:"");
+  }
+  kout.innerHTML=h;
+ }
+ sec.querySelector("#kaddE").onclick=()=>{st.rows.push(NEWROW("E"));build()};
+ sec.querySelector("#kaddU").onclick=()=>{st.rows.push(NEWROW("U"));build()};
+ sec.querySelector("#kclr").onclick=()=>{RESET();build()};
+ build();
+})();
+/* ---------- UKŁAD RÓWNAŃ (metoda Cramera) ---------- */
+(function(){
+ const sec=document.createElement("section");sec.className="card";
+ const st=state.r=state.r||{};
+ const DEFN=["x","y","z"];
+ st.n=st.n===3?3:2;
+ if(!Array.isArray(st.names)||st.names.length!==3)st.names=DEFN.slice();
+ st.names=st.names.map((v,i)=>v==null?DEFN[i]:String(v));
+ const oldC=Array.isArray(st.c)?st.c:[];
+ st.c=[0,1,2].map(i=>{const src=Array.isArray(oldC[i])?oldC[i]:[];return [0,1,2,3].map(j=>src[j]==null?"":String(src[j]))});
+ sec.innerHTML=`<h2>UKŁAD RÓWNAŃ</h2>
+ <p class="c">Rozwiązywanie układu 2 lub 3 równań liniowych <b>metodą Cramera</b> (wyznaczniki) — krok po kroku. Niewiadome możesz nazwać, np. <b>I1</b>, <b>I2</b>, <b>I3</b>.</p>
+ <div class="row"><div style="grid-column:1/-1"><label>Liczba równań i niewiadomych</label><select id="rn"><option value="2">2 równania</option><option value="3">3 równania</option></select></div></div>
+ <div id="rmx"></div>
+ <div class="kbtns"><button type="button" id="rclr">Wyczyść</button></div>
+ <div id="rout"></div>`;
+ app.appendChild(sec);cards.r=sec;
+ const mx=sec.querySelector("#rmx"),rout=sec.querySelector("#rout"),sel=sec.querySelector("#rn");
+ const L=a=>a.map(x=>typeof x==="string"?`<div class="ln">${x}</div>`:`<div class="ln pre">${x.pre}</div>`).join("");
+ const STP=(t,a,r)=>`<div class="step"><h3>${t}</h3>${L(a)}${r?`<div class="res">${r}</div>`:""}</div>`;
+ const nm=()=>{const o=[];for(let j=0;j<st.n;j++)o.push((st.names[j]||"").trim()||DEFN[j]);return o};
+ const series=it=>{let s="";it.forEach((x,i)=>{s+=i===0?(x.neg?"−"+x.body:x.body):(x.neg?" − "+x.body:" + "+x.body)});return s===""?"0":s};
+ function build(){
+  const n=st.n;
+  let h=`<div class="mx" style="grid-template-columns:auto repeat(${n},minmax(0,1fr)) auto minmax(0,1fr)">`;
+  h+=`<div></div>`;
+  for(let j=0;j<n;j++)h+=`<input class="nm" data-nm="${j}" value="${escA(st.names[j])}" aria-label="nazwa niewiadomej ${j+1}">`;
+  h+=`<div class="me">=</div><div></div>`;
+  for(let i=0;i<n;i++){
+   h+=`<div class="ml">R${i+1}</div>`;
+   for(let j=0;j<n;j++)h+=`<input data-c="${i},${j}" inputmode="decimal" aria-label="współczynnik w równaniu ${i+1}" value="${escA(st.c[i][j])}">`;
+   h+=`<div class="me">=</div><input class="rhs" data-c="${i},3" inputmode="decimal" aria-label="prawa strona równania ${i+1}" value="${escA(st.c[i][3])}">`;
+  }
+  mx.innerHTML=h+`</div>`;
+  calc();
+ }
+ mx.addEventListener("input",e=>{
+  const d=e.target.dataset;
+  if(d.nm!==undefined)st.names[+d.nm]=e.target.value;
+  else if(d.c){const p=d.c.split(",");st.c[+p[0]][+p[1]]=e.target.value}
+  else return;
+  calc();
+ });
+ sel.onchange=()=>{st.n=+sel.value;build()};
+ sec.querySelector("#rclr").onclick=()=>{st.c=[0,1,2].map(()=>["","","",""]);build()};
+ function calc(){
+  save();
+  const n=st.n,nazwy=nm(),bad=[],A=[],B=[];let any=false;
+  for(let i=0;i<n;i++){
+   const row=[];
+   for(let j=0;j<n;j++){
+    const raw=(st.c[i][j]||"").trim();
+    if(raw)any=true;
+    if(raw===""){row.push(0);continue}
+    const v=num(raw);
+    if(v===null){bad.push(`Równanie ${i+1}: „${escA(raw)}” nie jest poprawną liczbą (kolumna ${escA(nazwy[j])}).`);row.push(0)}
+    else row.push(v);
+   }
+   const rb=(st.c[i][3]||"").trim();let b=0;
+   if(rb){any=true;const v=num(rb);if(v===null)bad.push(`Równanie ${i+1}: „${escA(rb)}” nie jest poprawną liczbą (prawa strona).`);else b=v}
+   A.push(row);B.push(b);
+  }
+  let h=bad.map(x=>`<div class="err">${x}</div>`).join("");
+  if(bad.length){rout.innerHTML=h;return}
+  if(!any){rout.innerHTML=h+`<div class="c" style="margin-top:12px">Wpisz współczynniki przy niewiadomych i prawe strony równań.</div>`;return}
+  const eq=i=>{
+   let s="";
+   for(let j=0;j<n;j++){
+    const v=A[i][j];if(v===0)continue;
+    const a=Math.abs(v),t=(a===1?"":fv(a))+escA(nazwy[j]);
+    s+=s===""?(v<0?"−":"")+t:(v<0?" − ":" + ")+t;
+   }
+   return (s===""?"0":s)+" = "+fv(B[i]);
+  };
+  const d2=m=>m[0][0]*m[1][1]-m[0][1]*m[1][0];
+  const d3=m=>m[0][0]*m[1][1]*m[2][2]+m[0][1]*m[1][2]*m[2][0]+m[0][2]*m[1][0]*m[2][1]
+              -m[0][2]*m[1][1]*m[2][0]-m[0][0]*m[1][2]*m[2][1]-m[0][1]*m[1][0]*m[2][2];
+  const terms=m=>n===2
+   ?[[1,[m[0][0],m[1][1]]],[-1,[m[0][1],m[1][0]]]]
+   :[[1,[m[0][0],m[1][1],m[2][2]]],[1,[m[0][1],m[1][2],m[2][0]]],[1,[m[0][2],m[1][0],m[2][1]]],
+     [-1,[m[0][2],m[1][1],m[2][0]]],[-1,[m[0][0],m[1][2],m[2][1]]],[-1,[m[0][1],m[1][0],m[2][2]]]];
+  const matLines=(m,label)=>{
+   const w=[];
+   for(let j=0;j<n;j++)w.push(Math.max.apply(null,m.map(r=>fv(r[j]).length)));
+   return m.map((r,i)=>(i===0?label+" = ":" ".repeat(label.length+3))+"| "+r.map((v,j)=>fv(v).padStart(w[j])).join("  ")+" |");
+  };
+  const detLines=(m,label)=>{
+   const ts=terms(m),prods=ts.map(t=>t[0]*t[1].reduce((a,b)=>a*b,1));
+   const sum=prods.reduce((a,b)=>a+b,0);
+   const f1=series(ts.map(t=>({neg:t[0]<0,body:t[1].map(v=>v<0?"("+fv(v)+")":fv(v)).join("·")})));
+   const f2=series(prods.map(p=>({neg:p<0,body:fv(Math.abs(p))})));
+   return {lines:[{pre:matLines(m,label).join("\n")},`${label} = ${f1}`,`${label} = ${f2}`,`${label} = ${fv(sum)}`],value:sum};
+  };
+  let sn=0;const K=()=>`Krok ${++sn}: `;
+  h+=STP(K()+"Zapisujemy układ równań",Array.from({length:n},(_,i)=>eq(i)));
+  const W=detLines(A,"W");
+  h+=STP(K()+"Liczymy wyznacznik główny W",W.lines,`W = ${fv(W.value)}`);
+  let scale=1;
+  A.forEach(r=>r.forEach(v=>{if(Math.abs(v)>scale)scale=Math.abs(v)}));
+  if(Math.abs(W.value)<=1e-10*Math.max(1,Math.pow(scale,n))){
+   h+=`<div class="err">Wyznacznik główny W = 0, więc układ nie ma jednoznacznego rozwiązania — jest nieoznaczony albo sprzeczny. Metoda Cramera nie daje wtedy wyniku; sprawdź równania.</div>`;
+   rout.innerHTML=h;return;
+  }
+  const Wk=[],xs=[],lines=[];
+  for(let k=0;k<n;k++){
+   const M=A.map((row,i)=>row.map((v,j)=>j===k?B[i]:v));
+   const d=detLines(M,"W"+escA(nazwy[k]));
+   Wk.push(d.value);xs.push(d.value/W.value);lines.push(...d.lines);
+  }
+  h+=STP(K()+"Liczymy wyznaczniki dla każdej niewiadomej",[
+   "W każdym z nich kolumnę danej niewiadomej zastępujemy prawymi stronami równań.",
+   ...lines
+  ]);
+  h+=STP(K()+"Dzielimy wyznaczniki — otrzymujemy rozwiązanie",
+   xs.map((x,k)=>`${escA(nazwy[k])} = W${escA(nazwy[k])} ÷ W = ${fv(Wk[k])} ÷ ${fv(W.value)} = ${fv(x)}`),
+   xs.map((x,k)=>`${escA(nazwy[k])} = ${fv(x)}`).join("<br>"));
+  const chk=[];let ok=true;
+  for(let i=0;i<n;i++){
+   const it=[];let left=0;
+   for(let j=0;j<n;j++){
+    const a=A[i][j];if(a===0)continue;
+    left+=a*xs[j];
+    it.push({neg:(a<0)!==(xs[j]<0),body:`${fv(Math.abs(a))}·${xs[j]<0?"("+fv(xs[j])+")":fv(xs[j])}`});
+   }
+   const good=Math.abs(left-B[i])<=1e-9*Math.max(1,Math.abs(B[i]));
+   if(!good)ok=false;
+   chk.push(`R${i+1}: ${series(it)} = ${fv(left)}   (prawa: ${fv(B[i])}) ${good?"✓":"✗"}`);
+  }
+  h+=STP(K()+"Sprawdzamy rozwiązanie, podstawiając je do równań",chk,
+   ok?"Rozwiązanie spełnia wszystkie równania ✓":"Uwaga: któreś równanie nie zgadza się — sprawdź dane.");
+  rout.innerHTML=h;
+ }
+ sel.value=String(st.n);
+ build();
+})();
+/* ---------- OBWÓD: dwa węzły, N gałęzi równoległych ---------- */
+(function(){
+ const sec=document.createElement("section");sec.className="card";
+ const st=state.o=state.o||{};
+ const EL=(t,val,d)=>({t:t==="E"?"E":"R",v:val==null?"":String(val),d:d==="down"?"down":"up"});
+ const BR=(name,dir,els)=>({name:name||"",dir:dir==="down"?"down":"up",el:Array.isArray(els)&&els.length?els.map(e=>EL(e.t,e.v,e.d)):[EL("R","")]});
+ if(!Array.isArray(st.br)||!st.br.length)st.br=[BR("",null,[EL("R","")]),BR("",null,[EL("R","")])];
+ st.br=st.br.filter(b=>b&&typeof b==="object").map(b=>BR(b.name,b.dir,Array.isArray(b.el)?b.el:null));
+ st.br.forEach((b,i)=>{if(!b.name)b.name="I"+(i+1)});
+ const EXAMPLE=[
+  BR("I1","up",[EL("R",2),EL("E",2,"up"),EL("R",1)]),
+  BR("I3","down",[EL("E",3,"down"),EL("R",3)]),
+  BR("I2","up",[EL("R",4),EL("E",5,"up"),EL("R",2)])
+ ];
+ sec.innerHTML=`<h2>OBWÓD — PRĄDY GAŁĘZI</h2>
+ <p class="c">Schemat z <b>dwoma węzłami</b> (górny <b>A</b>, dolny <b>B</b>) i dowolną liczbą <b>gałęzi równoległych</b>. Każda gałąź to szereg oporników <b>R</b> i źródeł <b>E</b>. Program policzy napięcie między węzłami i wszystkie prądy.</p>
+ <details class="kn"><summary>Jak to wpisać i co oznaczają strzałki?</summary>
+  <p>Wpisz elementy każdej gałęzi od góry do dołu. Strzałka przy źródle mówi, w którą stronę SEM pcha prąd: <b>↑ A</b> — do górnego węzła, <b>↓ B</b> — do dolnego. Strzałka przy nazwie prądu to kierunek odniesienia: jeśli wynik wyjdzie ujemny, prąd płynie przeciwnie.</p>
+  <p>Najedź na pole i wpisz liczby w omach i woltach. Wzór, którego używa program: <b>U<sub>AB</sub> = (∑E/R) ÷ (∑1/R)</b>, a potem <b>I = (E − U)/R</b>.</p>
+ </details>
+ <div id="olist"></div>
+ <div class="kbtns">
+  <button type="button" id="oadd">+ Gałąź</button>
+  <button type="button" id="oex">Przykład z dokumentu</button>
+  <button type="button" id="oclr">Wyczyść</button>
+ </div>
+ <div id="osch"></div>
+ <div id="oout"></div>
+`;
+ app.appendChild(sec);cards.o=sec;
+ const list=sec.querySelector("#olist"),sch=sec.querySelector("#osch"),out=sec.querySelector("#oout");
+ const L=a=>a.map(x=>`<div class="ln">${x}</div>`).join("");
+ const STP=(t,a,r)=>`<div class="step"><h3>${t}</h3>${L(a)}${r?`<div class="res">${r}</div>`:""}</div>`;
+ const sgn=v=>v<0?"−":"+";
+ const sig=v=>{if(v===0||!isFinite(v))return 0;const m=Math.pow(10,2-Math.floor(Math.log10(Math.abs(v))));return Math.round(v*m)/m};
+ const approx=v=>{const s=sig(v);return fv(s)};
+ function build(){
+  list.innerHTML="";
+  st.br.forEach((b,i)=>{
+   const d=document.createElement("div");d.className="br";
+   let h=`<div class="brh">
+    <input class="bn" data-n="${i}" value="${escA(b.name)}" aria-label="nazwa prądu w gałęzi ${i+1}">
+    <button type="button" class="dirt" data-bd="${i}" title="kierunek odniesienia prądu (↑ do górnego węzła)">${b.dir==="down"?"↓ od A":"↑ do A"}</button>
+    <button type="button" class="del" data-bx="${i}" aria-label="usuń gałąź">✕</button>
+   </div><div class="brs" data-sum="${i}"></div>`;
+   b.el.forEach((el,j)=>{
+    h+=`<div class="elr">
+     <select data-t="${i},${j}" aria-label="rodzaj elementu"><option value="R"${el.t==="R"?" selected":""}>R</option><option value="E"${el.t==="E"?" selected":""}>E</option></select>
+     <input data-v="${i},${j}" inputmode="decimal" value="${escA(el.v)}" placeholder="${el.t==="R"?"Ω":"V"}" aria-label="wartość elementu">
+     <div class="u">${el.t==="R"?"Ω":"V"}</div>
+     ${el.t==="E"?`<button type="button" class="sd" data-ed="${i},${j}" title="kierunek SEM: ↑ do górnego węzła, ↓ do dolnego">${el.d==="down"?"↓":"↑"}</button>`:`<div></div>`}
+     <button type="button" class="x" data-ex="${i},${j}" aria-label="usuń element">✕</button>
+    </div>`;
+   });
+   h+=`<div class="kbtns"><button type="button" data-ae="${i}">+ element</button></div>`;
+   d.innerHTML=h;
+   list.appendChild(d);
+  });
+  calc();
+ }
+ list.addEventListener("input",e=>{
+  const t=e.target.dataset;
+  if(t.n!==undefined)st.br[+t.n].name=e.target.value;
+  else if(t.v){const p=t.v.split(",");st.br[+p[0]].el[+p[1]].v=e.target.value}
+  else return;
+  calc();
+ });
+ list.addEventListener("change",e=>{
+  const t=e.target.dataset;
+  if(t.t){const p=t.t.split(",");st.br[+p[0]].el[+p[1]].t=e.target.value==="E"?"E":"R";build()}
+ });
+ list.addEventListener("click",e=>{
+  const t=e.target.dataset;
+  if(t.ae!==undefined){st.br[+t.ae].el.push(EL("R",""));build()}
+  else if(t.ex){const p=t.ex.split(",");st.br[+p[0]].el.splice(+p[1],1);if(!st.br[+p[0]].el.length)st.br[+p[0]].el.push(EL("R",""));build()}
+  else if(t.bx!==undefined){st.br.splice(+t.bx,1);if(!st.br.length)st.br=[BR("I1",null,[EL("R","")])];st.br.forEach((b,i)=>{if(!b.name)b.name="I"+(i+1)});build()}
+  else if(t.bd!==undefined){const i=+t.bd;st.br[i].dir=st.br[i].dir==="down"?"up":"down";build()}
+  else if(t.ed){const p=t.ed.split(",");const el=st.br[+p[0]].el[+p[1]];el.d=el.d==="down"?"up":"down";build()}
+ });
+ sec.querySelector("#oadd").onclick=()=>{st.br.push(BR("I"+(st.br.length+1),null,[EL("R","")]));build()};
+ sec.querySelector("#oex").onclick=()=>{st.br=EXAMPLE.map(b=>BR(b.name,b.dir,b.el));build()};
+ sec.querySelector("#oclr").onclick=()=>{st.br=[BR("I1",null,[EL("R","")]),BR("I2",null,[EL("R","")])];build()};
+ function parse(){
+  const bad=[],brs=[];
+  st.br.forEach((b,i)=>{
+   let R=0,E=0,any=false;const parts={R:[],E:[]};
+   b.el.forEach((el,j)=>{
+    const raw=(el.v||"").trim();
+    if(raw==="")return;
+    any=true;
+    const v=num(raw);
+    if(v===null){bad.push(`Gałąź ${i+1} (${escA(b.name)}): „${escA(raw)}” nie jest poprawną liczbą.`);return}
+    if(v<0){bad.push(`Gałąź ${i+1}: wartości wpisuj bez znaku minus — kierunek ustawia się strzałką.`);return}
+    if(el.t==="R"){if(v===0){bad.push(`Gałąź ${i+1}: opór nie może wynosić 0 Ω.`);return}R+=v;parts.R.push(v)}
+    else{E+=el.d==="down"?-v:v;parts.E.push({v,d:el.d})}
+   });
+   brs.push({name:(b.name||"").trim()||("I"+(i+1)),R,E,dir:b.dir,parts,any});
+  });
+  return {bad,brs};
+ }
+ function schematic(brs){
+  const n=st.br.length;
+  const W=48+n*70,H=252,top=48,bot=H-38,x0=26,x1=W-26;
+  const xs=[];
+  for(let i=0;i<n;i++)xs.push(x0+(i+0.5)*(x1-x0)/n);
+  let s=`<svg class="sch" viewBox="0 0 ${W} ${H}" role="img" aria-label="Schemat obwodu">`;
+  s+=`<path class="wire" d="M${x0-8} ${top} H${x1+8} M${x0-8} ${bot} H${x1+8}"/>`;
+  s+=`<text class="lbl" x="2" y="${top+3}">A</text><text class="lbl" x="2" y="${bot+3}">B</text>`;
+  st.br.forEach((b,i)=>{
+   const x=xs[i],el=b.el,m=Math.max(1,el.length),seg=(bot-top)/m;
+   s+=`<path class="wire" d="M${x} ${top} V${bot}"/>`;
+   s+=`<circle class="node" cx="${x}" cy="${top}" r="2.6"/><circle class="node" cx="${x}" cy="${bot}" r="2.6"/>`;
+   el.forEach((e,j)=>{
+    const yc=top+seg*(j+0.5);
+    const r=Math.min(11,Math.max(7,seg*0.32)),rh=Math.min(13,Math.max(8,seg*0.36));
+    if(e.t==="R"){
+     s+=`<rect class="comp" x="${x-15}" y="${yc-rh/2}" width="30" height="${rh}" rx="3"/>`;
+     s+=`<text class="val" x="${x+18}" y="${yc+3}">${escA(e.v||"?")} Ω</text>`;
+    }else{
+     s+=`<circle class="src" cx="${x}" cy="${yc}" r="${r}"/>`;
+     const a=e.d==="down"?1:-1, L2=r*0.55;
+     s+=`<path class="sarr" d="M${x} ${yc-a*L2} L${x} ${yc+a*L2} M${x-3.2} ${yc+a*(L2-3.4)} L${x} ${yc+a*L2} L${x+3.2} ${yc+a*(L2-3.4)}"/>`;
+     s+=`<text class="val" x="${x+18}" y="${yc+3}">${escA(e.v||"?")} V</text>`;
+    }
+   });
+   const nm=(b.name||"").trim()||("I"+(i+1));
+   s+=`<text class="cur" x="${x}" y="${top-22}" text-anchor="middle">${escA(nm)}</text>`;
+   if(brs&&brs[i]&&isFinite(brs[i].I)){
+    s+=`<text class="cur" x="${x}" y="${top-11}" text-anchor="middle">${approx(brs[i].I)} A</text>`;
+   }
+   s+=`<text class="lbl" x="${x-4}" y="${bot+14}" text-anchor="middle">${b.dir==="down"?"↓":"↑"}</text>`;
+  });
+  return s+`</svg>`;
+ }
+ function calc(){
+  save();
+  const {bad,brs}=parse();
+  st.br.forEach((b,i)=>{
+   const node=list.querySelector(`[data-sum="${i}"]`);
+   if(!node)return;
+   let R=0;const Rp=[],Ep=[];
+   b.el.forEach(el=>{
+    const v=num((el.v||"").trim());
+    if(v===null||v<0)return;
+    if(el.t==="R"){R+=v;Rp.push(fv(v))}
+    else{Ep.push((el.d==="down"?"−":"+")+fv(v))}
+   });
+   node.textContent=`ΣR = ${Rp.length?Rp.join(" + ")+" = ":""}${fv(R)} Ω   ·   ΣE = ${Ep.length?Ep.join(" "):"0"} V`;
+  });
+  sch.innerHTML=schematic(null);
+  if(bad.length){out.innerHTML=bad.map(x=>`<div class="err">${x}</div>`).join("");return}
+  const used=brs.filter(b=>b.any);
+  if(used.length<2){out.innerHTML=`<div class="c" style="margin-top:12px">Wpisz wartości w co najmniej dwóch gałęziach, aby policzyć prądy.</div>`;return}
+  const active=brs.filter(b=>b.any);
+  const zeroR=active.filter(b=>b.R<=0);
+  if(zeroR.length){out.innerHTML=`<div class="err">W każdej użytej gałęzi musi być opór większy od 0 Ω (gałąź ${escA(active.find(b=>b.R<=0).name)}).</div>`;return}
+  const G=active.map(b=>1/b.R),sumG=G.reduce((a,b)=>a+b,0);
+  const top=active.reduce((a,b,i)=>a+b.E*G[i],0);
+  const U=top/sumG;
+  active.forEach(b=>{b.Iin=(b.E-U)/b.R;b.I=b.dir==="down"?-b.Iin:b.Iin});
+  sch.innerHTML=schematic(brs);
+  let sn=0;const K=()=>`Krok ${++sn}: `;
+  const jn=it=>{let s="";it.forEach((x,i)=>{s+=i===0?(x.neg?"−"+x.body:x.body):(x.neg?" − "+x.body:" + "+x.body)});return s===""?"0":s};
+  let h=STP(K()+"Gałęzie obwodu (sumy szeregowe)",active.map(b=>{
+   const Rp=b.parts.R.length>1?b.parts.R.map(v=>fv(v)).join(" + ")+" = ":"";
+   const Ep=b.parts.E.length>1?jn(b.parts.E.map(e=>({neg:e.d==="down",body:fv(e.v)})))+" = ":"";
+   return `${escA(b.name)}:  ΣR = ${Rp}${fv(b.R)} Ω,   ΣE = ${Ep}${fv(b.E)} V  (${b.dir==="down"?"strzałka prądu ↓ od A":"strzałka prądu ↑ do A"})`;
+  }));
+  const up=active.filter(b=>b.dir==="up").map(b=>escA(b.name));
+  const dn=active.filter(b=>b.dir==="down").map(b=>escA(b.name));
+  h+=STP(K()+"I prawo Kirchhoffa dla węzła A",
+   ["Suma prądów wpływających = suma prądów wypływających.",
+    `${up.join(" + ")||"0"} = ${dn.join(" + ")||"0"}`],
+   `${up.join(" + ")||"0"} = ${dn.join(" + ")||"0"}`);
+  const loopLines=[];
+  for(let k=0;k<active.length-1;k++){
+   const p=active[k],q=active[k+1];
+   const sp=p.dir==="down"?-1:1,sq=q.dir==="down"?-1:1;
+   let a=p.R*sp,b=-q.R*sq,c=p.E-q.E;
+   if(a<0){a=-a;b=-b;c=-c}
+   const term=(coef,name)=>(Math.abs(coef)===1?"":fv(Math.abs(coef)))+escA(name);
+   loopLines.push(`Oczko (${escA(p.name)} · ${escA(q.name)}):  ${term(a,p.name)} ${b<0?"−":"+"} ${term(b,q.name)} = ${fv(c)}`);
+  }
+  h+=STP(K()+"II prawo Kirchhoffa — oczka",loopLines);
+  h+=STP(K()+"Napięcie między węzłami (metoda potencjałów węzłowych)",
+   ["U_AB = (∑ E/R) ÷ (∑ 1/R)",
+    `∑ E/R = ${jn(active.map(b=>({neg:b.E<0,body:fv(Math.abs(b.E))+"/"+fv(b.R)})))} = ${fv(top)} A`,
+    `∑ 1/R = ${active.map(b=>"1/"+fv(b.R)).join(" + ")} = ${fv(sumG)} S`,
+    `U_AB = ${fv(top)} ÷ ${fv(sumG)} = ${fv(U)}`],
+   `U_AB = ${approx(U)} V`);
+  h+=STP(K()+"Prądy gałęzi:  I = (E − U) ÷ R",
+   active.map(b=>{
+    const nm=escA(b.name),pisz=(b.E<0?"("+fv(b.E)+")":fv(b.E));
+    const into=`${nm}(do A) = (${pisz} − ${b.E<0||U<0?"("+fv(U)+")":fv(U)}) ÷ ${fv(b.R)} = ${fv(b.Iin)}`;
+    return b.dir==="down"?`${into}   →   ${nm} = ${fv(b.I)} A (strzałka ↓)`:`${into} A`;
+   }),
+   active.map(b=>`${escA(b.name)} = ${approx(b.I)} A`).join("<br>"));
+  const nodeSum=active.reduce((a,b)=>a+b.Iin,0);
+  const okNode=Math.abs(nodeSum)<1e-9;
+  const chk=[`Suma prądów do węzła A: ${jn(active.map(b=>({neg:b.Iin<0,body:fv(Math.abs(b.Iin))})))} = ${fv(nodeSum)} A → ${okNode?"✓":"✗"}`];
+  active.forEach(b=>{if(b.I<0)chk.push(`${escA(b.name)} wyszedł ujemny — prąd płynie przeciwnie do strzałki odniesienia.`)});
+  let okLoops=true;
+  for(let k=0;k<active.length-1;k++){
+   const p=active[k],q=active[k+1];
+   const lv=p.R*p.Iin-q.R*q.Iin,rv=p.E-q.E,ok=Math.abs(lv-rv)<1e-9;
+   if(!ok)okLoops=false;
+   const pv=v=>v<0?"("+fv(v)+")":fv(v);
+   chk.push(`Oczko (${escA(p.name)}, ${escA(q.name)}): ${fv(p.R)}·${pv(p.Iin)} − ${fv(q.R)}·${pv(q.Iin)} = ${fv(lv)} V, a różnica SEM = ${fv(rv)} V → ${ok?"✓":"✗"}`);
+  }
+  h+=STP(K()+"Sprawdzenie",chk,(okNode&&okLoops)?"Prądy spełniają I i II prawo Kirchhoffa ✓":"Uwaga: któreś sprawdzenie się nie zgadza — sprawdź dane.");
+  out.innerHTML=h;
+ }
+ build();
 })();
 (function(){
  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);

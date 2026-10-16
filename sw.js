@@ -1,4 +1,4 @@
-const CACHE="mierniki-v8";
+const CACHE="mierniki-v11";
 const FILES=["./","index.html","manifest.webmanifest","icon-180.png","icon-192.png","icon-512.png",
   "vendor/math.min.js","vendor/nerdamer.all.min.js",
   "js/engine.js","js/cas-bridge.js","js/cas-worker.js","js/calculator.js","js/graph.js","js/matrix.js","js/stats.js"];
