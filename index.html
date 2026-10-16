@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Kalkulator Mierników</title>
-<meta name="description" content="Kalkulator mierników i obwodów: amperomierz i woltomierz, niepewności pomiarowe, systemy liczbowe, II prawo Kirchhoffa, układy równań i prądy gałęzi, kalkulator naukowy z CAS, wykresy, macierze i statystyka.">
+<meta name="description" content="Kalkulator mierników i obwodów: amperomierz i woltomierz, niepewności pomiarowe, systemy liczbowe, II prawo Kirchhoffa, układy równań i prądy gałęzi.">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b5fff">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -36,7 +36,7 @@ td.out{font-variant-numeric:tabular-nums;text-align:right;font-weight:600;backgr
 th:last-child{text-align:right}
 .avg{display:flex;justify-content:space-between;margin-top:10px;padding:12px;border-radius:10px;background:var(--out);font-weight:700}
 button{margin-top:10px;font:inherit;font-size:14px;color:var(--acc);background:none;border:0;padding:6px 0}
-.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:4px;margin-bottom:16px;background:var(--line);border-radius:12px}
+.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:4px;margin-bottom:16px;background:var(--line);border-radius:12px}
 .tabs button{margin:0;padding:10px 2px;font-weight:600;font-size:12px;line-height:1.15;color:var(--mut);border-radius:9px;overflow-wrap:anywhere}
 .tabs button[aria-selected=true]{background:var(--card);color:var(--acc);box-shadow:0 1px 3px rgba(0,0,0,.15)}
 .card[hidden]{display:none}
@@ -101,103 +101,6 @@ details.kn li{margin-bottom:4px}
 .elr .sd{margin:0;padding:5px 0;border:1px solid var(--line);border-radius:8px;font-size:13px;font-weight:700;color:var(--acc)}
 .elr .x{margin:0;padding:3px 4px;font-size:12px;color:var(--mut)}
 footer{color:var(--mut);font-size:12px;text-align:center}
-
-/* ====== Kalkulator ClassPad (KALKULATOR / WYKRESY / MACIERZE / STATYSTYKA) ====== */
-sup,sub{font-size:.72em}
-.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 2px}
-.frac .num{padding:0 4px;border-bottom:1.5px solid currentColor}
-.frac .den{padding:0 4px}
-.root{white-space:nowrap}
-.radic{border-top:1.5px solid currentColor;padding:0 2px}
-.cas-label{color:var(--mut);font-size:13px;display:block;margin-bottom:2px}
-.approx{color:var(--mut);font-size:.78em}
-.cp-topbar{display:flex;gap:8px;align-items:center;margin-bottom:10px}
-.cp-seg{display:flex;background:var(--line);border-radius:9px;padding:3px;gap:2px}
-.cp-seg button{margin:0;padding:6px 12px;border-radius:7px;font-size:13px;font-weight:600;color:var(--mut);background:none;border:0}
-.cp-seg button[aria-selected=true]{background:var(--card);color:var(--acc);box-shadow:0 1px 3px rgba(0,0,0,.15)}
-.cp-ghost{margin:0 0 0 auto;color:var(--mut);padding:6px}
-.cp-hist{max-height:230px;overflow-y:auto;margin-bottom:10px;border:1px solid var(--line);border-radius:10px;padding:6px;background:var(--bg)}
-.cp-hist:empty{display:none}
-.cp-entry{padding:6px 8px;border-radius:8px;cursor:pointer}
-.cp-entry:active{background:var(--out)}
-.cp-line-in{font:13px ui-monospace,Menlo,monospace;color:var(--mut);overflow-wrap:anywhere}
-.cp-line-out{font-size:17px;overflow-wrap:anywhere;margin-top:2px}
-.cp-approx{font-size:13px;color:var(--mut);margin-top:2px}
-.cp-info{font-size:12px;color:var(--mut);margin-top:3px}
-.cp-err{color:#d92d20;font-size:14px}
-.cp-warn{color:var(--mut);font-size:13px}
-.cp-preview{padding:8px 10px;font-size:19px;background:var(--out);border-radius:10px;margin-bottom:6px;overflow-wrap:anywhere}
-#cpInput{width:100%;font:18px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg);resize:none}
-#cpInput:focus{outline:2px solid var(--acc);border-color:transparent}
-.cp-inputwrap{margin-bottom:10px}
-.cp-panels{background:var(--line);border-radius:12px;padding:4px}
-.cp-pbtn{margin:0;padding:7px 0;flex:1;font-size:12.5px;font-weight:600;color:var(--mut);background:none;border:0;border-radius:9px}
-.cp-pbtn[aria-selected=true]{background:var(--card);color:var(--acc)}
-.cp-panels .cp-pbtn:first-child{margin-right:4px}
-.cp-pbtn{display:inline-block;width:24%}
-.cp-keys{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;padding-top:6px}
-.cp-key{margin:0;padding:11px 0;font-size:16px;font-weight:600;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:9px}
-.cp-key:active{background:var(--out)}
-.cp-key.exe{grid-column:1/-1;background:var(--acc);color:#fff;border-color:transparent;padding:13px 0;font-size:17px}
-.cp-key.danger{color:#d92d20}
-/* wykresy */
-.g-tabs,.s-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--line);padding:4px;border-radius:10px;margin-bottom:10px}
-.g-tabs button,.s-tabs button{margin:0;padding:8px 0;font-size:12px;font-weight:600;color:var(--mut);background:none;border:0;border-radius:8px}
-.g-tabs button[aria-selected=true],.s-tabs button[aria-selected=true]{background:var(--card);color:var(--acc)}
-.g-fnrow{display:flex;gap:6px;align-items:center;margin-bottom:6px}
-.g-dot{width:12px;height:12px;border-radius:50%;flex:none}
-.g-eq{color:var(--mut);font-size:14px}
-.g-fnrow input{flex:1;padding:7px 9px;font:15px ui-monospace,Menlo,monospace}
-.g-fnrow button{margin:0;padding:6px}
-.g-eye[aria-selected=false]{color:var(--mut)}
-.g-add{margin:2px 0 8px}
-.g-canvaswrap{position:relative}
-#gCanvas{width:100%;border:1px solid var(--line);border-radius:10px;display:block}
-.g-readout{position:absolute;top:8px;left:8px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:5px 9px;font:13px ui-monospace,Menlo,monospace;box-shadow:0 2px 8px rgba(0,0,0,.12)}
-.g-tools{display:flex;gap:6px;align-items:center;margin:8px 0;flex-wrap:wrap}
-.g-tools button{margin:0;padding:8px 13px;background:var(--card);border:1px solid var(--line);border-radius:9px;color:var(--fg);font-weight:600}
-.g-tools button[aria-selected=true]{background:var(--acc);color:#fff;border-color:transparent}
-.g-hint{font-size:11px;color:var(--mut);margin-left:auto;text-align:right}
-.g-analysis{border-top:1px dashed var(--line);padding-top:8px;margin-top:4px}
-.g-analysis>button{margin:0 4px 4px 0;padding:6px 10px;font-size:13px;background:var(--out);border:0;border-radius:8px;color:var(--acc);font-weight:600}
-.g-analysis b{font-size:13px;color:var(--mut);margin-right:4px}
-#gIntInputs{margin:6px 0;font-size:14px}
-#gIntInputs input{width:70px;padding:6px}
-.g-res{margin-top:6px;font-size:14px}
-.g-param .g-prow{display:flex;gap:6px;align-items:center;margin-bottom:6px}
-.g-prow label{margin:0;color:var(--mut);font-size:13px;flex:none}
-.g-tscroll{max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:10px}
-#gTable td,#gTable th{border-bottom:1px solid var(--line);font:14px ui-monospace,Menlo,monospace;padding:5px 8px}
-/* macierze */
-.m-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.m-box h3{margin:0 0 6px;font-size:13px;color:var(--mut)}
-.m-dims{display:flex;gap:6px;align-items:center;margin-bottom:6px;font-size:13px;color:var(--mut);flex-wrap:wrap}
-.m-dims button{margin:0;padding:3px 9px;background:var(--out);border:0;border-radius:7px;color:var(--acc);font-weight:700}
-.m-cells{display:grid;gap:5px}
-.m-cells input{padding:8px 4px;text-align:center;font:15px ui-monospace,Menlo,monospace}
-.m-ops{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0;align-items:center}
-.m-ops b{font-size:13px;color:var(--mut);margin-right:2px}
-.m-ops button{margin:0;padding:7px 11px;font-size:13px;font-weight:600;background:var(--out);color:var(--acc);border:0;border-radius:8px}
-.m-result{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;min-height:42px;font-size:16px;overflow-wrap:anywhere}
-.m-hint{color:var(--mut);font-size:14px}
-.m-reslabel{font-size:12px;color:var(--mut);margin-bottom:4px}
-.m-resblock{margin:4px 0}
-.mtx{border-collapse:collapse;margin:4px 0}
-.mtx td{border:1px solid var(--line);padding:6px 12px;font:15px ui-monospace,Menlo,monospace;text-align:center}
-/* statystyka */
-.s-pairtoggle{font-size:13px;color:var(--mut);margin-bottom:6px}
-.s-data textarea{width:100%;font:15px/1.45 ui-monospace,Menlo,monospace;padding:9px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);resize:vertical;margin-bottom:8px}
-#sHist{width:100%;border:1px solid var(--line);border-radius:10px;margin:6px 0 10px;display:block}
-.s-section h3{margin:12px 0 4px;font-size:13px;color:var(--mut)}
-.s-table{width:100%;border-collapse:collapse}
-.s-table td{padding:5px 6px;border-bottom:1px solid var(--line);font-size:14px}
-.s-table td:last-child{text-align:right;font-variant-numeric:tabular-nums}
-.s-resblock{margin:8px 0}
-.s-row{display:flex;gap:8px;align-items:center;margin:8px 0;font-size:14px;flex-wrap:wrap}
-.s-row label{margin:0}
-.s-row input,.s-row select{width:auto;min-width:60px}
-.s-miniout{margin:6px 0;font-size:15px;overflow-wrap:anywhere}
-.s-pred{margin-top:8px;font-size:15px}
 </style>
 </head>
 <body>
@@ -209,14 +112,6 @@ sup,sub{font-size:.72em}
 <div id="app"></div>
 <footer>Mierniki: wartość = (α ÷ α maks.) × zakres · Δ = klasa × zakres ÷ 100 · δ = Δ ÷ wartość<br>II prawo Kirchhoffa: ∑E = ∑I·R<br>Układ równań (Cramer): x = Wx ÷ W</footer>
 </main>
-<script src="vendor/math.min.js"></script>
-<script src="vendor/nerdamer.all.min.js"></script>
-<script src="js/engine.js"></script>
-<script src="js/cas-bridge.js"></script>
-<script src="js/calculator.js"></script>
-<script src="js/graph.js"></script>
-<script src="js/matrix.js"></script>
-<script src="js/stats.js"></script>
 <script>
 const METERS=[
  {id:"a",title:"AMPEROMIERZ",label:"prąd",units:["A","mA"],range:5,max:30,cls:0.5},
@@ -235,14 +130,13 @@ const escA=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const valV=s=>typeof s==="number"?fv(s):escA(s);
 const app=document.getElementById("app"),tabs=document.getElementById("tabs");
 const cards={};
-const ALL=[...METERS,{id:"n",title:"SYSTEMY"},{id:"k",title:"II PRAWO KIRCHHOFFA",tab:"II KIRCHHOFFA"},{id:"r",title:"UKŁAD RÓWNAŃ"},{id:"o",title:"OBWÓD",tab:"OBWÓD"},...(window.EXTRA_TABS||[])];
+const ALL=[...METERS,{id:"n",title:"SYSTEMY"},{id:"k",title:"II PRAWO KIRCHHOFFA",tab:"II KIRCHHOFFA"},{id:"r",title:"UKŁAD RÓWNAŃ"},{id:"o",title:"OBWÓD",tab:"OBWÓD"}];
 function show(id){
  state.tab=id;
  ALL.forEach(m=>{cards[m.id].hidden=m.id!==id;tabs.querySelector(`[data-t=${m.id}]`).setAttribute("aria-selected",m.id===id)});
  save();
 }
 ALL.forEach(m=>{const b=document.createElement("button");b.type="button";b.dataset.t=m.id;b.setAttribute("role","tab");b.textContent=m.tab||m.title;b.onclick=()=>show(m.id);tabs.appendChild(b)});
-ALL.forEach(m=>{if(m.card){cards[m.id]=m.card;app.appendChild(m.card)}});
 METERS.forEach(m=>{
  const s=state[m.id], u=()=>s.unit;
  const card=document.createElement("section");card.className="card";

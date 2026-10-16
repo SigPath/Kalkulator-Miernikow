@@ -1,7 +1,7 @@
 {
   "name": "Kalkulator Mierników",
   "short_name": "Mierniki",
-  "description": "Kalkulator mierników i obwodów: amperomierz i woltomierz, niepewności pomiarowe, systemy liczbowe, II prawo Kirchhoffa, układy równań i prądy gałęzi, kalkulator naukowy z CAS, wykresy, macierze i statystyką",
+  "description": "Kalkulator mierników i obwodów: amperomierz i woltomierz, niepewności pomiarowe, systemy liczbowe, II prawo Kirchhoffa, układy równań i prądy gałęzi",
   "lang": "pl",
   "start_url": "./",
   "scope": "./",
